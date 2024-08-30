@@ -1,0 +1,161 @@
+;****************************************************
+;This is a script to run a min step test.
+;If using a cap probe: Stage being tested will need to be enabled and homed before setting up the probe to avoid crashing the probe. 
+;Data will be collected in the Scope, exported to CSV, and post processed in the Incremental_Step_Test program
+;Digital Scope will need to be configured with axis signals to collect.
+;****************************************************
+DVAR $StartingLoc
+DVAR $StepSize
+DVAR $OverTravel
+DVAR $NumStep
+DVAR $AvgTime
+DVAR $Speed
+DVAR $RampRate
+DVAR $bidirectional
+DVAR $CapProbe
+DVAR $FileHandle
+DVAR $DataSamples
+DVAR $DataTime
+DVAR $SystemSerialNumber
+DVAR $DataDir
+DVAR $Fname
+
+FILECLOSE
+
+; Allocate global variables
+GlobalStrings = 25            ; do not change
+GlobalDoubles = 20            ; do not change
+
+#define SerialNo $STRGLOB0
+#define DataDir $STRGLOB1     ; directory structure for saving text output file
+#define FileName $STRGLOB2         ; output file name if data written to file
+
+;*****************Establish Variables****************
+#define TestAxis Y							;Name of axis being tested (only enter if using encoder feedback
+#define ProbeAxis Y						;Set = TestAxis unless probe is plugged into Analog Input of another axis
+
+$StartingLoc = 50							;Point in travel to start the test (user units)
+$StepSize = 0.0001								;Min Step step size (user units)(called out on ATP or ADS)
+$OverTravel = 0.1							;Needed to ensure all steps are made in the same direction. If Software Limits are on, this value will need to be less than 0.1
+$NumStep = 5								;Number of steps (called out on ATP or ADS)
+$AvgTime = 1								;Time (sec) to dwell in between steps
+$Speed = 10								;Step speed (user units)
+$RampRate = 1000							;(user units/s/s)
+$bidirectional = 1					;0 for unidirectional, 1 for bidirectional
+$CapProbe = 0								;0 if encoder feedback, 1 if cap probe feedback
+
+
+SerialNo = "635969-1-1"
+
+;*****************Data Collection*********************
+DataDir = "C:\A3200\BIN\"
+FileName = SerialNo + "_MinStep.dat"
+FileName = DataDir + FileName
+$FileHandle = FILEOPEN FileName, 0
+IF $bidirectional = 0
+	$DataSamples = (((((($NumStep+1)*$StepSize)*($Speed))+(($NumStep+1)*$AvgTime))+$AvgTime)*1000)
+ELSE
+	$DataSamples = ((((((($NumStep+1)*$StepSize)*($Speed))+(($NumStep+1)*$AvgTime))+$AvgTime)*2)*1000)
+END IF
+$DataTime = 1
+DATACOLLECT ITEM 0, TestAxis, DATAITEM_PositionFeedback 
+DATACOLLECT ITEM 1, TestAxis, DATAITEM_PositionCommand
+DATACOLLECT ITEM 2, TestAxis, DATAITEM_PositionError
+DATACOLLECT ITEM 3, TestAxis, DATAITEM_VelocityCommand
+DATACOLLECT ITEM 4, TestAxis, DATAITEM_VelocityFeedback
+DATACOLLECT ITEM 5, TestAxis, DATAITEM_VelocityError
+DATACOLLECT ITEM 6, ProbeAxis, DATAITEM_AnalogInput0
+;****************Execute Test*************************
+RAMP RATE TestAxis $RampRate
+
+IF $CapProbe = 0 THEN
+	SETPARM TestAxis HomeType 1
+	IF AxisStatus(TestAxis,DATAITEM_AxisStatus,AXISSTATUS_Homed)!=1
+		HOME TestAxis
+			WAIT movedone TestAxis
+			DWELL 0.2
+	ELSE
+		MOVEABS TestAxis $StartingLoc $Speed
+			WAIT movedone TestAxis
+			DWELL 0.2
+	END IF	
+		IF $bidirectional = 1 THEN
+			MOVEINC TestAxis (-1*$OverTravel) $Speed
+				WAIT movedone TestAxis
+				DWELL 0.1
+			MOVEINC TestAxis $OverTravel $Speed	
+				WAIT movedone TestAxis
+				DWELL 0.1
+			DATACOLLECT START $FileHandle, $DataSamples, $DataTime
+			REPEAT ($NumStep)
+					DWELL $AvgTime
+				MOVEINC TestAxis $StepSize $Speed
+					WAIT movedone TestAxis
+			END REPEAT
+			REPEAT ($NumStep)
+					DWELL $AvgTime
+				MOVEINC TestAxis (-1*$StepSize) $Speed
+					WAIT movedone TestAxis
+			END REPEAT
+			DWELL $AvgTime
+			DATACOLLECT STOP
+		ELSE	
+			MOVEINC TestAxis (-1*$OverTravel) $Speed
+				WAIT movedone TestAxis
+				DWELL 0.1
+			MOVEINC TestAxis $OverTravel $Speed		
+				WAIT movedone TestAxis
+				DWELL 0.1
+			DATACOLLECT START $FileHandle, $DataSamples, $DataTime
+			REPEAT ($NumStep)
+					DWELL $AvgTime
+				MOVEINC TestAxis $StepSize $Speed
+					WAIT movedone TestAxis
+			END REPEAT
+			DWELL $AvgTime
+			DATACOLLECT STOP
+		END IF
+ELSE
+	SETPARM TestAxis HomeType 4											;Set home type to "Home At Current Position"
+	HOME TestAxis
+	
+	IF $bidirectional = 1 THEN
+		MOVEINC TestAxis (-1*$OverTravel) $Speed
+			WAIT movedone TestAxis
+			DWELL 0.1
+		MOVEINC TestAxis $OverTravel $Speed	
+			WAIT movedone TestAxis
+			DWELL 0.1
+		DATACOLLECT START $FileHandle, $DataSamples, $DataTime
+		REPEAT ($NumStep)
+				DWELL $AvgTime
+			MOVEINC TestAxis $StepSize $Speed
+				WAIT movedone TestAxis
+		END REPEAT	
+		DWELL 0.1
+		REPEAT ($NumStep)
+				DWELL $AvgTime
+			MOVEINC TestAxis (-1*$StepSize) $Speed
+				WAIT movedone TestAxis
+		END REPEAT
+		DWELL $AvgTime
+		DATACOLLECT STOP
+	ELSE	
+		MOVEINC TestAxis (-1*$OverTravel) $Speed
+			WAIT movedone TestAxis
+			DWELL 0.1
+		MOVEINC TestAxis $OverTravel $Speed	
+			WAIT movedone TestAxis
+			DWELL 0.1
+		DATACOLLECT START $FileHandle, $DataSamples, $DataTime
+		REPEAT ($NumStep)
+				DWELL $AvgTime
+			MOVEINC TestAxis $StepSize $Speed
+				WAIT movedone TestAxis
+		END REPEAT
+		DWELL $AvgTime
+		DATACOLLECT STOP
+	END IF
+END IF
+
+FILECLOSE

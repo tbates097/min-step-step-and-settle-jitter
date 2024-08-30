@@ -1,0 +1,87 @@
+;****************************************************
+;This is a script to run a min step test.
+;If using a cap probe: Stage being tested will need to be enabled and homed before setting up the probe to avoid crashing the probe. 
+;Data will be collected in the Scope, exported to CSV, and post processed in the Incremental_Step_Test program
+;Digital Scope will need to be configured with axis signals to collect.
+;****************************************************
+DVAR $StartingLoc
+DVAR $TestDist
+DVAR $StepSize
+DVAR $OverTravel
+DVAR $AvgTime
+DVAR $Speed
+DVAR $RampRate
+DVAR $bidirectional
+DVAR $FileHandle
+DVAR $DataSamples
+DVAR $DataTime
+DVAR $SystemSerialNumber
+DVAR $DataDir
+DVAR $Fname
+DVAR $TestNo
+
+FILECLOSE
+
+; Allocate global variables
+GlobalStrings = 25            ; do not change
+GlobalDoubles = 20            ; do not change
+
+#define SerialNo $STRGLOB0
+#define DataDir $STRGLOB1     ; directory structure for saving text output file
+#define FileName $STRGLOB2         ; output file name if data written to file
+
+;*****************Establish Variables****************
+#define TestAxis X							;Name of axis being tested (only enter if using encoder feedback
+
+$StartingLoc = 0							;Point in travel to start the test (user units)
+$TestDist = 30
+$StepSize = 5								;Min Step step size (user units)(called out on ATP or ADS)
+$OverTravel = 0.1							;Needed to ensure all steps are made in the same direction. If Software Limits are on, this value will need to be less than 0.1
+$AvgTime = 1								;Time (sec) to dwell in between steps
+$Speed = 250								;Step speed (user units)
+$RampRate = 1000							;(user units/s/s)
+$bidirectional = 1					;0 for unidirectional, 1 for bidirectional
+
+SerialNo = "636418-1-1-"
+
+;****************Execute Test*************************
+RAMP RATE TestAxis $RampRate
+
+IF AxisStatus(TestAxis,DATAITEM_AxisStatus,AXISSTATUS_Homed)!=1
+	HOME TestAxis
+		DWELL 0.5
+END IF
+
+MOVEABS TestAxis $StartingLoc 10
+	DWELL $AvgTime
+	WAIT INPOS TestAxis
+	
+$TestNo = 0
+WHILE $TestNo < $TestDist/$StepSize
+DWELL 1
+	$TestNo = $TestNo + 1
+;*****************Data Collection Setup*********************
+	FileName = SerialNo + $TestNo + "_StepSettle.dat"
+	FileName = DataDir + FileName
+	$FileHandle = FILEOPEN FileName, 0
+	DataDir = "C:\A3200\BIN\"
+	$DataSamples = $AvgTime*1000
+	$DataTime = 1
+	DATACOLLECT ITEM 0, TestAxis, DATAITEM_PositionFeedback 
+	DATACOLLECT ITEM 1, TestAxis, DATAITEM_PositionCommand
+	DATACOLLECT ITEM 2, TestAxis, DATAITEM_PositionError
+	DATACOLLECT ITEM 3, TestAxis, DATAITEM_VelocityCommand
+	DATACOLLECT ITEM 4, TestAxis, DATAITEM_VelocityFeedback
+	DATACOLLECT ITEM 5, TestAxis, DATAITEM_VelocityError
+;***********************************************************
+	DATACOLLECT START $FileHandle, $DataSamples, $DataTime
+		MOVEINC TestAxis $StepSize $Speed
+			DWELL $AvgTime
+	DATACOLLECT STOP
+END WHILE	
+
+MOVEABS TestAxis $StartingLoc 10
+	DWELL $AvgTime
+	WAIT INPOS TestAxis
+	
+FILECLOSE
