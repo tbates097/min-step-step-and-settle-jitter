@@ -9,21 +9,18 @@ Edited last on 6/21/2022 at 8:00 am
 import automation1 as a1
 import numpy as np
 import time
-from matplotlib import gridspec
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import pandas as pd
 import os
+import traceback
 import plotly.graph_objs as go
 import plotly.io as pio
-import os
-import webbrowser
 import sys
 import datetime
 sys.path.append('../')
 
 import a1data
-
+from Logger import TextLogger
 
 class move_and_settle(a1data.a1data):
     '''
@@ -114,13 +111,23 @@ class move_and_settle(a1data.a1data):
         self.num_cycles = kwargs['num_cycles']
         self.step_time = kwargs['step_time']
         self.folder = kwargs['folder']
+        self.import_data = kwargs['import_data']
+        self.text_widget = kwargs['text_widget']
         
         
         #Non-user definable parameters
         self.data_len = -1 #Obviously fake number for error checking, defined in populate method
         self.pos_dev = [[]] #Position Deviation, 2D list
-        
-            
+    
+    def setup_error_logging(self):
+        # Redirect sys.stderr to the text widget
+        sys.stderr = TextLogger(self.text_widget)
+
+    def log_exception(self, exc_type, exc_value, exc_traceback):
+        """Custom exception handler to log exceptions to the Text widget."""
+        error_message = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        print(error_message)  # This will be redirected to the Text widget    
+    
     def test(self, controller : a1.Controller):
         '''
         Method to perform the corresponding Automation 1 test in compliance with ASME B5.64
@@ -142,10 +149,12 @@ class move_and_settle(a1data.a1data):
         
         # Define the folder name and path
         self.folder_name = 'Step And Settle Test Data'
+        self.folder_path = os.path.join(self.folder, self.folder_name)
+        os.makedirs(self.folder_path, exist_ok=True)
         current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')  # Format the current datetime
         
         # Create a new folder path with the timestamp
-        self.new_folder_path = os.path.join(self.folder, f"{self.folder_name}-{current_time}")
+        self.new_folder_path = os.path.join(self.folder_path, f"{current_time}")
         
         # Create the directory if it doesn't exist
         os.makedirs(self.new_folder_path, exist_ok=True)
@@ -229,10 +238,10 @@ class move_and_settle(a1data.a1data):
         for i in range(1, self.num_cycles + 1):
             #For the amount of steps that can fit in the given frame
             for j in range(1, (self.frame[1] - self.frame[0]) // self.step_size + 1):
-                dataframe_list.append(pd.read_csv(r'{}\step{}_{}.csv'.format(self.folder,j,i))) #Read in Move and Settle as a csv file
+                dataframe_list.append(pd.read_csv(r'{}\step{}_{}.csv'.format(self.new_folder_path,j,i))) #Read in Move and Settle as a csv file
             if self.direction == a1data.mode.Bidirectional:
                 for j in range(1, (self.frame[1] - self.frame[0]) // self.step_size + 1):
-                    dataframe_list.append(pd.read_csv(r'{}\stepback{}_{}.csv'.format(self.folder,j,i))) #Read in Move and Settle as a csv file
+                    dataframe_list.append(pd.read_csv(r'{}\stepback{}_{}.csv'.format(self.new_folder_path,j,i))) #Read in Move and Settle as a csv file
         return dataframe_list
     
     
@@ -242,7 +251,7 @@ class move_and_settle(a1data.a1data):
         #Extending the populate function of a1data class to check if a folder was inputted
         if folder is not None: 
             data_files = [file for file in os.listdir(folder) if 'csv' in file]
-            
+            self.import_folder = folder
             
             #data is a list of dataframes
             data = [pd.read_csv(folder + '\\' +i) for i in data_files]
@@ -288,8 +297,13 @@ class move_and_settle(a1data.a1data):
         no_move_range =  []
         self.move_time = []
         
-        self.csv_path = f"{self.new_folder_path}/{self.df}"
-        self.csv_folder = f"{self.new_folder_path}"
+        if self.import_data == True:
+            self.csv_path = f"{self.import_folder}/{self.df}"
+            self.csv_folder = f"{self.import_folder}"
+        
+        else:
+            self.csv_path = f"{self.new_folder_path}/{self.df}"
+            self.csv_folder = f"{self.new_folder_path}"
 
         signal_dict = {}
         
@@ -762,7 +776,6 @@ class move_and_settle(a1data.a1data):
         step_num = kwargs['step_num']
         after_move_end = kwargs['after_move_end']
         fignum = kwargs['fignum']
-        legend_loc = kwargs['legend_loc']
         legend_size = kwargs['legend_size']
         signal = kwargs['signal']
 
@@ -897,15 +910,11 @@ class move_and_settle(a1data.a1data):
         }
         # Update kwargs with any provided options
         kwargs = {**default_kwargs,**kwargs}
-        step_num = kwargs['step_num']
         after_move_end = kwargs['after_move_end']
-        fignum = kwargs['fignum']
-        legend_loc = kwargs['legend_loc']
         legend_size = kwargs['legend_size']
         signal = kwargs['signal']
         
         # Extract relevant data and options from kwargs
-        step_num = kwargs['step_num']
         after_move_end = kwargs['after_move_end']
         signal = kwargs['signal']
         
@@ -922,10 +931,18 @@ class move_and_settle(a1data.a1data):
         aerotech_settle_time = all_aero_ms_times
 
         time_spec = aero_settle_dict['Time Specification']
-    
+
         if after_move_end:
             start = self.start_plot
-            end = np.where(time_vals == time_spec)[0][0] + 50
+            # Use np.isclose to find the index of the value closest to time_spec within a small tolerance
+            tolerance = 1e-6  # Adjust this value as needed based on the precision of your data
+            result = np.where(np.isclose(time_vals, time_spec, atol=tolerance))[0]
+            
+            if result.size > 0:
+                end = result[0] + 50
+            else:
+                print(f"No matching elements close to {time_spec} found in time_vals. Using default end value.")
+                end = 50  # Default handling if no match is found
         else:
             start = 0
             end = len(time_vals) - 1
@@ -1030,7 +1047,6 @@ class move_and_settle(a1data.a1data):
                           'signal': self.pos_err}
         kwargs = {**default_kwargs, **kwargs}
         after_move_end = kwargs['after_move_end']
-        legend_loc = kwargs['legend_loc']
         legend_size = kwargs['legend_size']
         signal = kwargs['signal']
         
@@ -1045,7 +1061,6 @@ class move_and_settle(a1data.a1data):
         # Scale plot elements based on the axis size
         line_width = max(1, ax_width / 6)
         font_size = max(8, ax_width * .50)
-        marker_size = max(5, ax_width * .50)
     
 # =============================================================================
 #         # Plot creation, starts with the single/averaged specified signal

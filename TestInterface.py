@@ -18,6 +18,7 @@ import numpy as np
 import tkinter as tk
 from tkinter import ttk, messagebox, font, filedialog
 import shutil
+import traceback
 import plotly.graph_objs as go
 import plotly.io as pio
 import webbrowser
@@ -67,6 +68,14 @@ class GlobalState:
         self.yforwarddata = []
         self.yreversedata = []
 
+def setup_error_logging(text_widget):
+    # Redirect sys.stderr to the text widget
+    syst.stderr = TextLogger(text_widget)
+
+def log_exception(exc_type, exc_value, exc_traceback):
+    """Custom exception handler to log exceptions to the Text widget."""
+    error_message = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    print(error_message)  # This will be redirected to the Text widget
 
 # Initialize Global State
 global_state = GlobalState()
@@ -140,6 +149,9 @@ def get_clientsocket():
     return global_state.clientsocket
 
 def UI():
+    global window_open
+    window_open = True  # Initialize as False, meaning no window is open
+
     initialize_globals()  # Initialize global variables
 
     global ani, window
@@ -151,7 +163,7 @@ def UI():
     window = tk.Tk()
     window.title("Min Step - Jitter - Step and Settle")
     window.resizable(True, False)
-
+    
     screen_width = window.winfo_screenwidth()
     screen_height = window.winfo_screenheight()
 
@@ -240,64 +252,167 @@ def UI():
     ttk.Separator(master=tab1, orient='vertical').grid(row=tab1.h1_row, column=4, rowspan=21, sticky='nsw', pady=(4, 0))
     
     # Load stored data or set defaults
-    ms_axis_value = stored_data.get("axis_name", "X")
-    ms_start_value = stored_data.get("start_position", 10)
-    ms_end_value = stored_data.get("end_position", 30)
-    ms_step_value = stored_data.get("step_size", 15)
-    ms_iter_value = stored_data.get("iterations", 1)
-    ms_speed_value = stored_data.get("speed", 5)
-    ms_ramp_v_value = stored_data.get("ramp_rate", 1000)
-    ms_dwell_value = stored_data.get("dwell", 1)
-    ms_unit_value = stored_data.get("units", 'mm')
-    ms_err_unit_value = stored_data.get("error_units", 'mm')
-    ms_sample_value = stored_data.get("sample_rate", "1 kHz")
-    ms_sys_value = stored_data.get("system_serial_number", '"System Serial Number"')
-    ms_st_value = stored_data.get("part_number", '"Part Number"')
-    ms_opName_value = stored_data.get("operator", '"Your Initials"')
-    ms_temp_value = stored_data.get("temp", 20)
-    ms_comm_value = stored_data.get("comments", "")
+    ms_direction_value = stored_data.get("ms_test_type",'uni')
+    ms_axis_value = stored_data.get("ms_axis_name", "X")
+    ms_start_value = stored_data.get("ms_start_position", 10)
+    ms_end_value = stored_data.get("ms_end_position", 30)
+    ms_step_value = stored_data.get("ms_step_size", 5)
+    ms_iter_value = stored_data.get("ms_iterations", 1)
+    ms_speed_value = stored_data.get("ms_speed", 100)
+    ms_ramp_v_value = stored_data.get("ms_ramp_rate", 1000)
+    ms_dwell_value = stored_data.get("ms_dwell", 1)
+    ms_unit_value = stored_data.get("ms_units", 'mm')
+    ms_err_unit_value = stored_data.get("ms_error_units", 'mm')
+    ms_sample_value = stored_data.get("ms_sample_rate", "1 kHz")
+    ms_sys_value = stored_data.get("ms_system_serial_number", '"System Serial Number"')
+    ms_st_value = stored_data.get("ms_part_number", '"Part Number"')
+    ms_opName_value = stored_data.get("ms_operator", '"Your Initials"')
+    ms_temp_value = stored_data.get("ms_temp", 20)
+    ms_comm_value = stored_data.get("ms_comments", "")
+    
+    ipj_axis_value = stored_data.get("ipj_axis_name", "X")
+    ipj_signal_value = stored_data.get("ipj_signal",'Encoder')
+    ipj_probe_value = stored_data.get("ipj_probe_axis", 'None')
+    ipj_sens_value = stored_data.get("ipj_scale factor (user units)", '0.0025')
+    ipj_unit_value = stored_data.get("ipj_units", 'mm')
+    ipj_err_unit_value = stored_data.get("ipj_error_units", 'mm')
+    ipj_sample_value = stored_data.get("ipj_sample_rate", "1 kHz")
+    ipj_dwell_value = stored_data.get("ipj_duration", 10)
+    ipj_sys_value = stored_data.get("ipj_system_serial_number", '"System Serial Number"')
+    ipj_st_value = stored_data.get("ipj_part_number", '"Part Number"')
+    ipj_opName_value = stored_data.get("ipj_operator", '"Your Initials"')
+    ipj_temp_value = stored_data.get("ipj_temp", 20)
+    ipj_comm_value = stored_data.get("ipj_comments", "")
+    ipj_direction_value = stored_data.get("ipj_direction", 'pos')
+    
+    # Load stored data or set defaults
+    ins_direction_value = stored_data.get("ins_test_type",'uni')
+    ins_axis_value = stored_data.get("ins_axis_name", "X")
+    ins_start_value = stored_data.get("ins_start_position", 0)
+    ins_step_value = stored_data.get("ins_step_size", 0.00005)
+    ins_num_step_value = stored_data.get("ins_num_step", 5)
+    ins_probe_value = stored_data.get("ins_probe_axis", 'None')
+    ins_sens_value = stored_data.get("ins_scale factor (user units)", '0.0025')
+    ins_speed_value = stored_data.get("ins_speed", 5)
+    ins_ramp_v_value = stored_data.get("ins_ramp_rate", 1000)
+    ins_dwell_value = stored_data.get("ins_dwell", 1)
+    ins_ipj_value = stored_data.get("ins_jitter",'0.00000147')
+    ins_settle_value = stored_data.get("ins_settle",'0.14')
+    ins_signal_value = stored_data.get("ins_signal",'Encoder')
+    ins_unit_value = stored_data.get("ins_units", 'mm')
+    ins_err_unit_value = stored_data.get("ins_error_units", 'mm')
+    ins_sample_value = stored_data.get("ins_sample_rate", "1 kHz")
+    ins_sys_value = stored_data.get("ins_system_serial_number", '"System Serial Number"')
+    ins_st_value = stored_data.get("ins_part_number", '"Part Number"')
+    ins_opName_value = stored_data.get("ins_operator", '"Your Initials"')
+    ins_temp_value = stored_data.get("ins_temp", 20)
+    ins_comm_value = stored_data.get("ins_comments", "")
+    
+    frame = tk.Frame(master=tab1)
 
+    txt_outStr = tk.Text(master=frame, state=tk.DISABLED, height=10, fg='white', bg='black')
+    outStr_scroll = tk.Scrollbar(master=frame, orient=tk.VERTICAL)
+
+    txt_outStr.configure(yscrollcommand=outStr_scroll.set)
+    outStr_scroll.config(command=txt_outStr.yview)
+
+    txt_outStr.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    outStr_scroll.pack(side=tk.LEFT, fill=tk.Y)
+
+    frame.grid(row=tab1.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
+
+    text_logger = TextLogger(txt_outStr)
+    
+    tab1.grid_rowconfigure(tab1.out_row, weight=1)
+    tab1.grid_columnconfigure(0, weight=1)
+    
+    def get_latest_timestamped_folder(base_folder):
+        # Regular expression pattern to match your folder naming format
+        pattern = re.compile(r"(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})")
+
+        # List all directories in the base folder
+        all_folders = [os.path.join(base_folder, d) for d in os.listdir(base_folder) if os.path.isdir(os.path.join(base_folder, d))]
+        
+        # Filter out folders that match the timestamp pattern
+        time_stamped_folders = []
+        for folder in all_folders:
+            match = pattern.search(folder)
+            if match:
+                time_stamped_folders.append(folder)
+    
+        if not time_stamped_folders:
+            raise ValueError("No folders found with the expected timestamp format.")
+
+        # Sort folders by their timestamp
+        latest_folder = max(time_stamped_folders, key=lambda folder: datetime.strptime(pattern.search(folder).group(1), "%Y-%m-%d_%H-%M-%S"))
+        
+        return latest_folder
+    
     def start_moveandsettletest():
         global_state.reset()
         ms_btn_run_rot.config(state=tk.DISABLED)
         threading.Thread(target=run_moveandsettletest).start()
+        setup_error_logging(txt_outStr)
+        
+        syst.excepthook = log_exception
         #threading.Thread(target=moveandsettle_live_plot).start()
 
     def run_moveandsettletest():
+        global window_open
+
         # Save user inputs before closing
         user_data = {
-            "axis_name": ms_axis.get(),
-            "start_position": ms_start.get(),
-            "end_position": ms_end.get(),
-            "step_size": ms_step.get(),
-            "iterations": ms_iter.get(),
-            "speed": ms_speed.get(),
-            "ramp_rate": ms_ramp_v.get(),
-            "dwell": ms_dwell.get(),
-            "units": ms_unit.get(),
-            "error_units": ms_err_unit.get(),
-            "sample_rate": ms_sample.get(),
-            "system_serial_number": ms_sys.get(),
-            "part_number": ms_st.get(),
-            "operator": ms_opName.get(),
-            "temp": ms_temp.get(),
-            "comments": ms_comm.get()
+            "ms_test_type": ms_direction.get(),
+            "ms_axis_name": ms_axis.get(),
+            "ms_start_position": ms_start.get(),
+            "ms_end_position": ms_end.get(),
+            "ms_step_size": ms_step.get(),
+            "ms_iterations": ms_iter.get(),
+            "ms_speed": ms_speed.get(),
+            "ms_ramp_rate": ms_ramp_v.get(),
+            "ms_dwell": ms_dwell.get(),
+            "ms_units": ms_unit.get(),
+            "ms_error_units": ms_err_unit.get(),
+            "ms_sample_rate": ms_sample.get(),
+            "ms_system_serial_number": ms_sys.get(),
+            "ms_part_number": ms_st.get(),
+            "ms_operator": ms_opName.get(),
+            "ms_temp": ms_temp.get(),
+            "ms_comments": ms_comm.get()
         }
         save_user_inputs(user_data)
         try:
             moveandsettletest()
             ms_data_filtering()            
-            ms_process_data(folder)
+            ms_process_data(folder, import_data=False)
         finally:
             gc.collect()  
-            if global_state.clientsocket:
-                global_state.clientsocket.close()
-            window.after(0, ms_btn_run_rot.config, {'state': tk.NORMAL})
-            
+            try:
+                # Only try to interact with Tkinter if the window is still open
+                if window_open:
+                    # Schedule a callback to change the button state if the window is still valid
+                    window.after(0, lambda: ipj_btn_run_rot.config(state=tk.NORMAL))
+                else:
+                    return
+            except RuntimeError:
+                return        
+    
     def moveandsettletest():
-        syst.stdout = logger1
+        def prompt_user(message):
+            text_logger.write(message)
+            txt_outStr.delete(1.0, tk.END)
+            return text_logger.read_input()
+
+        def clear_text():
+            txt_outStr.delete(1.0, tk.END)
+        
+        syst.stdout = text_logger
         global folder
-        folder = filedialog.askdirectory(title="Select Data File Location")
+        # Set the initial directory to the current working directory (where the script is located)
+        initial_directory = os.getcwd()  # or os.path.dirname(__file__) for the script directory
+        
+        # Open a dialog to select a directory, starting at the Python script's directory
+        folder = filedialog.askdirectory(title="Select Data File Save Location - LOCAL", initialdir=initial_directory)
         axis = str(ms_axis.get())
         sample_rate = ms_get_sample_rate_value()
         step_size = int(ms_step.get())
@@ -311,6 +426,19 @@ def UI():
         units = str(ms_unit.get())
         error_units = str(ms_err_unit.get())
         
+        try:
+            if ms_dir == 'None':
+                ms_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
+                if ms_none == ">":
+                    clear_text()
+                else:
+                    ms_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
+        except NameError:
+            ms_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
+            if ms_none == ">":
+                clear_text()
+            else:
+                ms_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
         try:
             controller = a1.Controller.connect()
             controller.start()
@@ -369,7 +497,7 @@ def UI():
                     messagebox.showerror('No Device', 'No Devices Present. Check Connections.')
 
             global_state.ms = move_and_settle(axis, sample_rate, step_size, [start_pos, end_pos], probe_axis, 
-                                              direction=direction, 
+                                              direction=ms_dir, 
                                               speed=speed, 
                                               num_cycles=num_cycles, 
                                               dwell=dwell, 
@@ -377,32 +505,52 @@ def UI():
                                               ramp_type = a1.RampType.SCurve,
                                               units=units,
                                               error_units=error_units,
-                                              folder=folder
+                                              folder=folder,
+                                              import_data=False,
+                                              text_widget=txt_outStr
                                             )
             global_state.ms.test(controller)
-    def get_latest_timestamped_folder(base_folder):
-        # Regular expression pattern to match your folder naming format
-        pattern = re.compile(r"Step And Settle Test Data-(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})")
+            
+    def import_ms_data():
+        syst.stdout = text_logger
 
-        # List all directories in the base folder
-        all_folders = [os.path.join(base_folder, d) for d in os.listdir(base_folder) if os.path.isdir(os.path.join(base_folder, d))]
+        axis = str(ms_axis.get())
+        sample_rate = ms_get_sample_rate_value()
+        step_size = int(ms_step.get())
+        start_pos = int(ms_start.get())
+        end_pos = int(ms_end.get())
+        probe_axis = 'None'
+        speed = int(ms_speed.get())
+        num_cycles = int(ms_iter.get())
+        dwell = int(ms_dwell.get())
+        ramp_value = int(ms_ramp_v.get())
+        units = str(ms_unit.get())
+        error_units = str(ms_err_unit.get())
         
-        # Filter out folders that match the timestamp pattern
-        time_stamped_folders = []
-        for folder in all_folders:
-            match = pattern.search(folder)
-            if match:
-                time_stamped_folders.append(folder)
-    
-        if not time_stamped_folders:
-            raise ValueError("No folders found with the expected timestamp format.")
+        global_state.ms = move_and_settle(axis, sample_rate, step_size, [start_pos, end_pos], probe_axis, 
+                                          direction=ms_dir, 
+                                          speed=speed, 
+                                          num_cycles=num_cycles, 
+                                          dwell=dwell, 
+                                          ramp_value=ramp_value,
+                                          ramp_type = a1.RampType.SCurve,
+                                          units=units,
+                                          error_units=error_units,
+                                          import_data=True,
+                                          text_widget=txt_outStr
+                                        )
+        
+        
+        folder = filedialog.askdirectory() # List of selected files will be set button's file attribute.
+        
+        global_state.ms.populate(folder = folder)
+        
+        ms_data_filtering()
+        ms_process_data(folder,import_data=True)
 
-        # Sort folders by their timestamp
-        latest_folder = max(time_stamped_folders, key=lambda folder: datetime.strptime(pattern.search(folder).group(1), "%Y-%m-%d_%H-%M-%S"))
-        
-        return latest_folder
     def ms_data_filtering():
         def apply_button_click():
+            toggle_topmost(False)
             butter_func()
             filter_window.destroy()
         def reset_func():
@@ -420,11 +568,19 @@ def UI():
             global_state.Comments = f'\n{type_var} pass butterworth filter \nwith a {omega_c} Hz cut-off frequency \napplied'
             messagebox.showinfo("Butterworth Filter Applied", "Butterworth Filter Applied")
         
+        def toggle_topmost(state):
+            filter_window.wm_attributes("-topmost", state)
+        
         # Create a new Toplevel window instead of a new Tk window
         filter_window = tk.Toplevel()
         filter_window.title("Data Filtering")
         filter_window.grab_set()
-
+        
+        # Ensure the window stays on top until it loses focus
+        filter_window.wm_attributes("-topmost", True)
+        
+        filter_window.lift()
+        
         custom_title_font = ("Bold", 16)
         custom_header1_font = ("Bold", 14)
         custom_header2_font = ("Bold", 12)
@@ -490,9 +646,70 @@ def UI():
         filter_window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
         
         filter_window.wait_window()
+    
+    def ms_PDF_save_path():
+        # Save the figure as a PDF
+        start_path = ('O:/')
+        sys_serial = str(ms_sys.get())
+        folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
+        pdf_file_path = folder_path + '/Customer Files/Plots'
+        folder_name = 'Step And Settle Plots'
+        new_file_path = os.path.join(pdf_file_path,folder_name)
+        os.makedirs(new_file_path,exist_ok=True)
         
-    def ms_process_data(folder):
-        global desired_time,pos_tolerance
+        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        new_folder_path = os.path.join(new_file_path, f"{current_time}")
+        os.makedirs(new_folder_path, exist_ok=True)
+        
+        
+        return new_folder_path
+    
+    def ms_CSV_save_path():
+        start_path = 'O:/'
+        sys_serial = str(ms_sys.get())
+        
+        # Find the correct folder path
+        folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
+        csv_file_path = os.path.join(folder_path, 'TestData')
+        
+        # Define the folder name and create the directory with timestamp
+        folder_name = 'Step And Settle Data'
+        csv_folder_path = os.path.join(csv_file_path,folder_name)
+        os.makedirs(csv_folder_path, exist_ok=True)
+        
+        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')  
+        new_folder_path = os.path.join(csv_folder_path, f"{current_time}")
+        os.makedirs(new_folder_path)
+        
+        
+        # Construct the destination file path
+        base_folder = folder  # Ensure 'folder' is defined and exists
+        new_path = os.path.join(base_folder, 'Step And Settle Test Data')  # Correct path construction without leading backslash
+    
+        # Check if the constructed path exists before proceeding
+        if not os.path.exists(new_path):
+            print(f"Error: The path '{new_path}' does not exist.")
+        else:
+            # Get the latest timestamped folder
+            latest_folder = get_latest_timestamped_folder(new_path)
+        
+        # Move the file from the source location to the new folder
+        for item in os.listdir(latest_folder):
+            source_item = os.path.join(latest_folder, item)
+            destination_item = os.path.join(new_folder_path, item)
+            
+            # Check if it's a file or directory
+            if os.path.isdir(source_item):
+                shutil.move(source_item, destination_item)
+            else:
+                shutil.move(source_item, destination_item)
+        
+        print(f'All contents moved to {new_folder_path}')    
+    
+    def ms_process_data(folder, import_data):
+        global desired_time,pos_tolerance,avg
+        
+        avg = None
         def average_button():
             global avg
             if checkbox_var.get() == 1:  # Checkbox is checked
@@ -503,15 +720,24 @@ def UI():
                 df["state"] = tk.NORMAL
         
         def process_button_click():
+            toggle_topmost(False)
             process_results()
+            toggle_topmost(True)
         
         def next_function():
+            plt.clf()
             process_window.destroy()
             ms_PDF(latest_folder)
+        
+        def toggle_topmost(state):
+            process_window.wm_attributes("-topmost", state)
         
         # Create a new Toplevel window instead of a new Tk window
         process_window = tk.Toplevel()
         process_window.title("Data Processing")
+        
+        # Ensure the window stays on top until it loses focus
+        process_window.wm_attributes("-topmost", True)
         
         process_window.lift()
         
@@ -539,11 +765,22 @@ def UI():
         ent_plot = tk.Checkbutton(process_window, text='Average', variable=checkbox_var, command=average_button)
         ent_plot.grid(row=4, column=0, pady=2)
         
-        base_folder = folder
-        latest_folder = get_latest_timestamped_folder(base_folder)
-
-        data_files = [file for file in os.listdir(latest_folder) if 'csv' in file]
-
+        if import_data == False:
+            base_folder = folder  # Ensure 'folder' is defined and exists
+            new_path = os.path.join(base_folder, 'Step And Settle Test Data')  # Correct path construction without leading backslash
+        
+            # Check if the constructed path exists before proceeding
+            if not os.path.exists(new_path):
+                print(f"Error: The path '{new_path}' does not exist.")
+            else:
+                # Get the latest timestamped folder
+                latest_folder = get_latest_timestamped_folder(new_path)
+        
+                if latest_folder and os.path.exists(latest_folder):
+                    # List CSV files in the latest folder
+                    data_files = [file for file in os.listdir(latest_folder) if 'csv' in file]
+                else:
+                    print(f"Error: No valid folder found in '{new_path}' or the folder does not exist.")
         # Dropdown for selecting DataFrame index
         df_options = data_files  # Example options, replace with actual data
 
@@ -577,9 +814,12 @@ def UI():
             
         def process_results():
             # Example processing and plotting function
-            global data_dict, aero_dict
+            global data_dict, aero_dict, ms_new_folder_path
             
             plt.clf()
+            
+            # Create the figure and axes using the Aerotech format template
+            fig, ax1, ax2, ax3, ax4 = AerotechFormat.makeTemplate()
             
             #data_dict = global_state.ms.data_analysis(error_metric, process_window_size.get(), calc_direction, position_tolerance.get(), df=df.get())
             aero_dict = global_state.ms.aero_move_and_settle(desired_time, pos_tolerance,sig=avg,df=df.get())
@@ -596,9 +836,11 @@ def UI():
             
             embed_plot_in_canvas(aero_plot,plot_frame)
             
-            #print('The ASME Move and Settle time for {} is {} seconds'.format(error_metric_w.get(), data_dict['Move and Settle Time']))
             print('The Aerotech Move and Settle Time is {} seconds'.format(aero_dict['Aerotech Move and Settle Time']))
-        
+            
+            ms_new_folder_path = ms_PDF_save_path()
+            global_state.ms.GUI_plot_plotly(aero_dict, ms_new_folder_path, ax=ax1, legend_size=20)
+            
         btn_process_data = tk.Button(process_window, text="Process Data", command=process_button_click)
         btn_process_data.grid(row=7, column=0, pady=10)
         
@@ -617,25 +859,36 @@ def UI():
         screen_height = process_window.winfo_screenheight()
     
         # Calculate the x and y coordinates to center the window
-        x_cordinate = int((screen_width / 2) - (window_width / 2))
+        x_cordinate = int((screen_width / 3.5) - (window_width / 2))
         y_cordinate = int((screen_height / 2) - (window_height / 2))
     
         # Set the geometry of the window to center it on the screen
         process_window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
         
         process_window.wait_window()
-
+    
     def ms_PDF(folder):
         def pdf_button_click():
+            toggle_topmost(False)
             gen_PDF()
+            toggle_topmost(True)
             
         def end_test():
             pdf_window.destroy()
-            
+            window.after(0, lambda: ms_btn_run_rot.config(state=tk.NORMAL))
+        
+        def toggle_topmost(state):
+            pdf_window.wm_attributes("-topmost", state)    
+        
         # Create a new Toplevel window instead of a new Tk window
         pdf_window = tk.Toplevel()
         pdf_window.title("Generate PDF and CSV")
-    
+        
+        # Ensure the window stays on top until it loses focus
+        pdf_window.wm_attributes("-topmost", True)
+        
+        pdf_window.lift()
+        
         title_font = ("Bold", 16)
         header_font = ("Bold", 12)
         # Labels
@@ -712,7 +965,7 @@ def UI():
             # Test Conditions Text Box (ax4)
             degree_sign = u'\N{DEGREE SIGN}'
             ax4.text(.02, .8, 'Temperature: {} {}C'.format(temp, degree_sign), color='black', size=font_size_ax4)
-            ax4.text(.02, .725, 'Direction: {}'.format("direction"), color='black', size=font_size_ax4)
+            ax4.text(.02, .725, 'Direction: {}'.format("ms_dir"), color='black', size=font_size_ax4)
             ax4.text(.02, .65, 'Axis Bounds: [{} {}, {} {}]'.format(global_state.ms.frame[0], units, global_state.ms.frame[1], units), color='black', size=font_size_ax4)
             ax4.text(.02, .575, 'Speed: {} {}/s'.format(speed, units), color='black', size=font_size_ax4)
             ax4.text(.02, .5, 'Sample Rate: {} Hz'.format(1/t[1]), color='black', size=font_size_ax4)
@@ -720,27 +973,13 @@ def UI():
             ax4.text(.02, .350, 'Axis: {}'.format(axis), color='black', size=font_size_ax4)
             ax4.text(.02, .275, 'Commanded Step: {:.3e} {}'.format(step_size, units), color='black', size=font_size_ax4)
             ax4.text(.02, .200, 'Position Tolerance: {} {}'.format("position_tolerance", units), color='black', size=font_size_ax4)
-        
-            # Save the figure as a PDF
-            start_path = ('O:/')
-            sys_serial = str(ms_sys.get())
-            folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
-            pdf_file_path = folder_path + '/Customer Files/Plots'
-            folder_name = 'Step And Settle Plots'
-            new_file_path = os.path.join(pdf_file_path,folder_name)
-            os.makedirs(new_file_path,exist_ok=True)
             
-            current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            new_folder_path = os.path.join(new_file_path, f"{current_time}")
-            os.makedirs(new_folder_path, exist_ok=True)
             output_file = str(sys_serial + '-' + str(ms_axis.get()) + "_Step and Settle.pdf")
-            save_file = new_folder_path + '/' + output_file
-        
+            save_file = ms_new_folder_path + '/' + output_file
+            
             # Save the figure with tight bounding box
             fig.savefig(save_file, bbox_inches='tight')
             print('PDF saved')
-            
-            global_state.ms.GUI_plot_plotly(aero_dict, new_folder_path, ax=ax1, legend_size=20)
             
         # Button to generate PDF
         gen_pdf_button = tk.Button(pdf_window, text="Generate PDF", command=gen_PDF)
@@ -752,72 +991,14 @@ def UI():
         csv_file_entry = tk.Entry(pdf_window)
         csv_file_entry.insert(0, "ms.csv")
         csv_file_entry.grid(row=5, column=0, pady=2)
-    
-
-        # Function to save CSV
-        def save_CSV():
-            def get_latest_timestamped_folder(base_folder):
-                # Regular expression pattern to match your folder naming format
-                pattern = re.compile(r"Step And Settle Test Data-(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})")
-
-                # List all directories in the base folder
-                all_folders = [os.path.join(base_folder, d) for d in os.listdir(base_folder) if os.path.isdir(os.path.join(base_folder, d))]
-
-                # Filter out folders that match the timestamp pattern
-                time_stamped_folders = []
-                for folder in all_folders:
-                    match = pattern.search(folder)
-                    if match:
-                        time_stamped_folders.append(folder)
-            
-                if not time_stamped_folders:
-                    raise ValueError("No folders found with the expected timestamp format.")
-
-                # Sort folders by their timestamp
-                latest_folder = max(time_stamped_folders, key=lambda folder: datetime.strptime(pattern.search(folder).group(1), "%Y-%m-%d_%H-%M-%S"))
-                
-                return latest_folder
-            start_path = 'O:/'
-            sys_serial = str(ms_sys.get())
-            
-            # Find the correct folder path
-            folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
-            csv_file_path = os.path.join(folder_path, 'TestData')
-            
-            # Define the folder name and create the directory with timestamp
-            folder_name = 'Step And Settle Data'
-            csv_folder_path = os.path.join(csv_file_path,folder_name)
-            os.makedirs(csv_folder_path, exist_ok=True)
-            
-            current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')  
-            new_folder_path = os.path.join(csv_folder_path, f"{current_time}")
-            os.makedirs(new_folder_path)
-            
-            
-            # Construct the destination file path
-            base_folder = folder
-            latest_folder = base_folder
-            
-            # Move the file from the source location to the new folder
-            for item in os.listdir(latest_folder):
-                source_item = os.path.join(latest_folder, item)
-                destination_item = os.path.join(new_folder_path, item)
-                
-                # Check if it's a file or directory
-                if os.path.isdir(source_item):
-                    shutil.move(source_item, destination_item)
-                else:
-                    shutil.move(source_item, destination_item)
-            
-            print(f'All contents moved to {new_folder_path}')
      
         # Button to save CSV
-        save_csv_button = tk.Button(pdf_window, text="Save CSV", command=save_CSV)
+        save_csv_button = tk.Button(pdf_window, text="Save CSV", command=ms_CSV_save_path)
         save_csv_button.grid(row=8, column=0, pady=10)
 
         # Button to save CSV
-        save_csv_button = tk.Button(pdf_window, text="Finish Test", command=end_test)
-        save_csv_button.grid(row=9, column=0, pady=10)
+        end_test_button = tk.Button(pdf_window, text="Finish Test", command=end_test)
+        end_test_button.grid(row=9, column=0, pady=10)
         
         # Center the window on the screen
         pdf_window.update_idletasks()
@@ -825,19 +1006,23 @@ def UI():
         window_height = pdf_window.winfo_height()
         screen_width = pdf_window.winfo_screenwidth()
         screen_height = pdf_window.winfo_screenheight()
-        x_cordinate = int((screen_width / 2) - (window_width / 2))
+        x_cordinate = int((screen_width / 3.5) - (window_width / 2))
         y_cordinate = int((screen_height / 2) - (window_height / 2))
         pdf_window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")        
         
         pdf_window.wait_window()
+    
+    global ms_dir
+    ms_dir = a1data.mode.Unidirectional
+        
     def ms_test_type_def():
-        global direction
+        global ms_dir
         if ms_direction.get() == "uni":
-            direction = a1data.mode.Unidirectional
+            ms_dir = a1data.mode.Unidirectional
         elif ms_direction.get() == "bi":
-            direction = a1data.mode.Bidirectional
+            ms_dir = a1data.mode.Bidirectional
         else:
-            direction = 'None'
+            ms_dir = 'None'
     
     # Function to get the selected sample rate value
     def ms_get_sample_rate_value():
@@ -848,53 +1033,11 @@ def UI():
                 return option[1]
         return None  # If not found, return None or handle it as needed
     
-    def open_rotary_Plot():
-        axis = ms_axis.get()
-        sys_serial = ms_sys.get()
-
-        start_path = ('O:/')
-        folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
-        pdf_file_path = folder_path + '/Customer Files/Plots'
-
-        if os.path.exists(pdf_file_path):
-            try:
-                output_file = str(sys_serial + '-' + axis + "_Accuracy.pdf")
-                pdf = pdf_file_path + '/' + output_file
-                os.startfile(pdf)
-            except:
-                pass
-            try:
-                output_file = str(sys_serial + '-' + axis + "_Verification.pdf")
-                pdf = pdf_file_path + '/' + output_file
-                os.startfile(pdf)
-            except:
-                pass
-        else:
-            print(f"File '{pdf_file_path}' does not exist.")
-    
-    # Load stored data or set defaults
-    ms_axis_value = stored_data.get("axis_name", "X")
-    ms_start_value = stored_data.get("start_position", 10)
-    ms_end_value = stored_data.get("end_position", 30)
-    ms_step_value = stored_data.get("step_size", 15)
-    ms_iter_value = stored_data.get("iterations", 1)
-    ms_speed_value = stored_data.get("speed", 5)
-    ms_ramp_v_value = stored_data.get("ramp_rate", 1000)
-    ms_dwell_value = stored_data.get("dwell", 1)
-    ms_unit_value = stored_data.get("units", 'mm')
-    ms_err_unit_value = stored_data.get("error_units", 'mm')
-    ms_sample_value = stored_data.get("sample_rate", "1 kHz")
-    ms_sys_value = stored_data.get("system_serial_number", '"System Serial Number"')
-    ms_st_value = stored_data.get("part_number", '"Part Number"')
-    ms_opName_value = stored_data.get("operator", '"Your Initials"')
-    ms_temp_value = stored_data.get("temp", 20)
-    ms_comm_value = stored_data.get("comments", "")
-    
     # Create the UI elements and assign the stored values
     ms_lbl_test = tk.Label(master=tab1, text="Select Test Type:")
     ms_lbl_test.grid(row=tab1.tt_row, column=0, padx=5, pady=5)
 
-    ms_direction = tk.StringVar(value=0)
+    ms_direction = tk.StringVar(value=ms_direction_value)
     ms_uni_dir = tk.Radiobutton(master=tab1, text="Unidirectional", variable=ms_direction, value="uni", command=ms_test_type_def)
     ms_uni_dir.grid(row=tab1.tt_row, column=1, padx=5, pady=5)
 
@@ -1016,60 +1159,16 @@ def UI():
     ms_ent_comments = tk.Entry(master=tab1, textvariable=ms_comm, width=25)
     ms_ent_comments.grid(row=tab1.com_row, column=1, columnspan=3, padx=5, pady=5)
 
-    #btn_import_rot = tk.Button(master=tab1, text="Import Data", width=30, height=1, command=import_data_rotary)
-    #btn_import_rot.grid(row=tab1.run_row, column=1, padx=5, pady=5)
+    btn_import_rot = tk.Button(master=tab1, text="Import Data", width=30, height=1, command=import_ms_data)
+    btn_import_rot.grid(row=tab1.run_row, column=1, padx=5, pady=5)
 
-    ms_lbl_import_rot = tk.Label(master=tab1, text='', anchor='w')
-    ms_lbl_import_rot.grid(row=tab1.run_row, column=1, padx=5, pady=5, columnspan=3)
+# =============================================================================
+#     ms_lbl_import_rot = tk.Label(master=tab1, text='', anchor='w')
+#     ms_lbl_import_rot.grid(row=tab1.run_row, column=1, padx=5, pady=5, columnspan=3)
+# =============================================================================
 
     ms_btn_run_rot = tk.Button(master=tab1, text="Run", width=25, height=1, command=start_moveandsettletest)
     ms_btn_run_rot.grid(row=tab1.run_row, column=0, padx=5, pady=5)
-
-    ms_btn_open_rot = tk.Button(master=tab1, text="Open Plot", width=25, height=1, command=open_rotary_Plot)
-    ms_btn_open_rot.grid(row=tab1.run_row, column=2, padx=5, pady=5)
-
-    frame = tk.Frame(master=tab1)
-
-    txt_outStr = tk.Text(master=frame, state=tk.DISABLED, height=10, fg='white', bg='black')
-    outStr_scroll = tk.Scrollbar(master=frame, orient=tk.VERTICAL)
-
-    txt_outStr.configure(yscrollcommand=outStr_scroll.set)
-    outStr_scroll.config(command=txt_outStr.yview)
-
-    txt_outStr.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    outStr_scroll.pack(side=tk.LEFT, fill=tk.Y)
-
-    frame.grid(row=tab1.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
-
-    logger1 = TextLogger(txt_outStr)
-    
-    tab1.grid_rowconfigure(tab1.out_row, weight=1)
-    tab1.grid_columnconfigure(0, weight=1)
-    
-    def ms_on_closing():
-        # Save user inputs before closing
-        user_data = {
-            "axis_name": ms_axis.get(),
-            "start_position": ms_start.get(),
-            "end_position": ms_end.get(),
-            "step_size": ms_step.get(),
-            "iterations": ms_iter.get(),
-            "speed": ms_speed.get(),
-            "ramp_rate": ms_ramp_v.get(),
-            "dwell": ms_dwell.get(),
-            "units": ms_unit.get(),
-            "error_units": ms_err_unit.get(),
-            "sample_rate": ms_sample.get(),
-            "system_serial_number": ms_sys.get(),
-            "part_number": ms_st.get(),
-            "operator": ms_opName.get(),
-            "temp": ms_temp.get(),
-            "comments": ms_comm.get()
-        }
-        save_user_inputs(user_data)
-        window.destroy()
-    
-    window.protocol("WM_DELETE_WINDOW", ms_on_closing)
     
 # =============================================================================
 # 
@@ -1103,7 +1202,7 @@ def UI():
     tab2.h3_row = 14
     tab2.run_row = 15
     tab2.out_row = 16
-
+    
     window.rowconfigure(tab2.out_row, minsize=4)
 
     # Create horizontal separators
@@ -1116,49 +1215,61 @@ def UI():
     tab2.columnconfigure(4, weight=1)
     
     # Add the vertical separator to the frame
-    ttk.Separator(master=tab2, orient='vertical').grid(row=tab2.h1_row, column=4, rowspan=21, sticky='nsw', pady=(7, 0))    
-    
-    
-    # Load stored data or set defaults
-    ipj_axis_value = stored_data.get("axis_name", "X")
-    ipj_signal_value = stored_data.get("signal", 0)
-    ipj_probe_value = stored_data.get("probe_axis", 'X')
-    ipj_sens_value = stored_data.get("scale factor (user units)", '0.0025')
-    ipj_unit_value = stored_data.get("units", 'mm')
-    ipj_err_unit_value = stored_data.get("error_units", 'mm')
-    ipj_sample_value = stored_data.get("sample_rate", "1 kHz")
-    ipj_dwell_value = stored_data.get("duration", 1)
-    ipj_sys_value = stored_data.get("system_serial_number", '"System Serial Number"')
-    ipj_st_value = stored_data.get("part_number", '"Part Number"')
-    ipj_opName_value = stored_data.get("operator", '"Your Initials"')
-    ipj_temp_value = stored_data.get("temp", 20)
-    ipj_comm_value = stored_data.get("comments", "")
-    ipj_direction_value = stored_data.get("direction", 'pos')
-    
+    ttk.Separator(master=tab2, orient='vertical').grid(row=tab2.h1_row, column=4, rowspan=17, sticky='nsw', pady=(4, 0))    
+ 
+    # Create a Frame to hold the Text widget and the Scrollbar
+    frame1 = tk.Frame(tab2)
 
+    # Create the Text widget
+    txt_outStr1 = tk.Text(master=frame1, state=tk.DISABLED, height=10, fg='white', bg='black')
+
+    # Create the Scrollbar widget
+    outStr_scroll1 = tk.Scrollbar(master=frame1, orient=tk.VERTICAL)
+
+    # Link the Scrollbar to the Text widget
+    txt_outStr1.configure(yscrollcommand=outStr_scroll1.set)
+    outStr_scroll1.config(command=txt_outStr1.yview)
+
+    # Pack the Text widget and the Scrollbar inside the Frame
+    txt_outStr1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    outStr_scroll1.pack(side=tk.LEFT, fill=tk.Y)
+
+    # Grid the Frame containing the Text widget and the Scrollbar
+    frame1.grid(row=tab2.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
+
+    # Create the logger object
+    text_logger1 = TextLogger(txt_outStr1)
+    
+    # Configure the grid to expand the Frame
+    tab2.grid_rowconfigure(tab2.out_row, weight=1)
+    tab2.grid_columnconfigure(0, weight=1) 
+    
     def start_jittertest():
         global_state.reset()
         ipj_btn_run_rot.config(state=tk.DISABLED)
         threading.Thread(target=run_jittertest).start()
-        #threading.Thread(target=moveandsettle_live_plot).start()
+        setup_error_logging(txt_outStr1)
+        
+        syst.excepthook = log_exception
 
     def run_jittertest():
+        global window_open
         # Save user inputs before closing
         user_data = {
-            "axis_name": ipj_axis.get(),  # Entry widget
-            "signal": ipj_signal_var.get(),  # OptionMenu
-            "probe_axis": ipj_probe.get(),  # Entry widget
-            "scale factor (user units)": ipj_sens.get(),  # Entry widget
-            "units": ipj_unit.get(),  # OptionMenu
-            "error_units": ipj_err_unit.get(),  # OptionMenu
-            "sample_rate": ipj_samp.get(),  # OptionMenu
-            "duration": ipj_dwell.get(),  # Entry widget
-            "system_serial_number": ipj_sys.get(),  # Entry widget
-            "part_number": ipj_st.get(),  # Entry widget
-            "operator": ipj_opName.get(),  # Entry widget
-            "temp": ipj_temp.get(),  # Entry widget
-            "comments": ipj_comm.get(),  # Entry widget
-            "direction": ipj_direction_var.get()  # Radiobutton selection
+            "ipj_axis_name": ipj_axis.get(),  # Entry widget
+            "ipj_signal": ipj_signal_var.get(),  # OptionMenu
+            "ipj_probe_axis": ipj_probe.get(),  # Entry widget
+            "ipj_scale factor (user units)": ipj_sens.get(),  # Entry widget
+            "ipj_units": ipj_unit.get(),  # OptionMenu
+            "ipj_error_units": ipj_err_unit.get(),  # OptionMenu
+            "ipj_sample_rate": ipj_samp.get(),  # OptionMenu
+            "ipj_duration": ipj_dwell.get(),  # Entry widget
+            "ipj_system_serial_number": ipj_sys.get(),  # Entry widget
+            "ipj_part_number": ipj_st.get(),  # Entry widget
+            "ipj_operator": ipj_opName.get(),  # Entry widget
+            "ipj_temp": ipj_temp.get(),  # Entry widget
+            "ipj_comments": ipj_comm.get(),  # Entry widget
+            "ipj_direction": ipj_direction_var.get()  # Radiobutton selection
         }
         save_user_inputs(user_data)
         try:
@@ -1167,13 +1278,27 @@ def UI():
             ipj_process_data()
             
         finally:
-            gc.collect()  
-            if global_state.clientsocket:
-                global_state.clientsocket.close()
-            window.after(0, ipj_btn_run_rot.config, {'state': tk.NORMAL})
-            
+            gc.collect()
+            try:
+                # Only try to interact with Tkinter if the window is still open
+                if window_open:
+                    # Schedule a callback to change the button state if the window is still valid
+                    window.after(0, lambda: ipj_btn_run_rot.config(state=tk.NORMAL))
+                else:
+                    return
+            except RuntimeError:
+                return
+                
     def jittertest():
-        syst.stdout = logger2
+        def prompt_user(message):
+            text_logger1.write(message)
+            txt_outStr1.delete(1.0, tk.END)
+            return text_logger1.read_input()
+
+        def clear_text():
+            txt_outStr1.delete(1.0, tk.END)
+        
+        syst.stdout = text_logger1
         global folder
         Axis = str(ipj_axis.get())
         SamplingRate = ipj_get_sample_rate_value()
@@ -1181,7 +1306,21 @@ def UI():
         Direction = str(ipj_direction_var.get())
         Sensitivity = float(ipj_sens.get())
         ProbeAxis = str(ipj_probe.get())
-
+        
+        try:
+            if ipj_signal == 'None':
+                ipj_none = prompt_user("Please select a signal. Press 'Enter' when ready.")
+                if ipj_none == ">":
+                    clear_text()
+                else:
+                    ipj_none = prompt_user("Please select a signal. Press 'Enter' when ready.")
+        except NameError:
+            ipj_none = prompt_user("Please select a signal. Press 'Enter' when ready.")
+            if ipj_none == ">":
+                clear_text()
+            else:
+                ipj_none = prompt_user("Please select a signal. Press 'Enter' when ready.")
+            
         try:
             controller = a1.Controller.connect()
             controller.start()
@@ -1238,15 +1377,37 @@ def UI():
                     controller = a1.Controller.connect_usb()
                 except:
                     messagebox.showerror('No Device', 'No Devices Present. Check Connections.')
-
+            
             global_state.ipj = jitter(Axis, SamplingRate, TestTime, Direction, 
                                       Sensitivity, ProbeAxis, units = ipj_unit.get(),
-                                      error_units = ipj_err_unit.get()
+                                      error_units = ipj_err_unit.get(), import_data=False, text_widget=txt_outStr1
                                             )
             global_state.ipj.test(controller)
             
+    def import_ipj_data():
+        syst.stdout = text_logger1
+        Axis = str(ipj_axis.get())
+        SamplingRate = ipj_get_sample_rate_value()
+        TestTime = int(ipj_dwell.get())
+        Direction = str(ipj_direction_var.get())
+        Sensitivity = float(ipj_sens.get())
+        ProbeAxis = str(ipj_probe.get())
+        
+        global_state.ipj = jitter(Axis, SamplingRate, TestTime, Direction, 
+                                  Sensitivity, ProbeAxis, units = ipj_unit.get(),
+                                  error_units = ipj_err_unit.get(), import_data=True, text_widget=txt_outStr1
+                                        )
+        
+        file = filedialog.askopenfilename(multiple=False)
+
+        global_state.ipj.populate(file=file)
+        ipj_data_filtering()
+        ipj_process_data()
+        
+        
     def ipj_data_filtering():
         def apply_button_click():
+            toggle_topmost(False)
             butter_func()
             filter_window.destroy()
 
@@ -1272,8 +1433,8 @@ def UI():
             print("Least Squares Linear Normalization applied")
     
         def butter_func():
-            pos_fbk_copy = copy.deepcopy(global_state.ipj.pos_fbk)
-            ai0_copy = copy.deepcopy(global_state.ipj.ai0)
+            copy.deepcopy(global_state.ipj.pos_fbk)
+            copy.deepcopy(global_state.ipj.ai0)
             global_state.ipj.butter(mode, omega.get(), order_.get(), type_var.get())
             global_state.Comments += '\n{} pass Butterworth filter with a {} Hz cut-off frequency applied'.format(
                 type_var.get(), omega.get()
@@ -1286,12 +1447,20 @@ def UI():
                 mode = a1data.mode.pos_fbk
             elif mode_var.get() == 'Analog Input':
                 mode = a1data.mode.ai0
-
+        
+        def toggle_topmost(state):
+            filter_window.wm_attributes("-topmost", state)
+            
         # Create a new Toplevel window
         filter_window = tk.Toplevel()
         filter_window.title("Data Filtering")
         filter_window.grab_set()
-    
+        
+        # Ensure the window stays on top until it loses focus
+        filter_window.wm_attributes("-topmost", True)
+        
+        filter_window.lift()
+        
         custom_title_font = ("Bold", 16)
         custom_header1_font = ("Bold", 14)
         custom_header2_font = ("Bold", 12)
@@ -1369,22 +1538,48 @@ def UI():
         filter_window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
         
         filter_window.wait_window()        
-        
-    def ipj_process_data():
-        global crms_freq, high_bound, low_bound
-        def plot_data_func():
-            plot_results()
     
+    def ipj_PDF_save_path():
+        # Save the figure as a PDF
+        start_path = ('O:/')
+        sys_serial = str(ipj_sys.get())
+        folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
+        pdf_file_path = folder_path + '/Customer Files/Plots'
+        folder_name = 'In Position Jitter Plots'
+        jitter_folder_path = os.path.join(pdf_file_path, folder_name)
+        os.makedirs(jitter_folder_path, exist_ok=True)
+        
+        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        new_folder_path = os.path.join(jitter_folder_path, f"{current_time}")
+        os.makedirs(new_folder_path, exist_ok=True)
+        
+        return new_folder_path
+    
+    def ipj_process_data():
+        global crms_freq, high_bound, low_bound, ipj_new_folder_path
+        def plot_data_func():
+            toggle_topmost(False)
+            plot_results()
+            toggle_topmost(True)
         def next_function():
+            toggle_topmost(False)
             process_window.destroy()
             ipj_PDF()
             # Replace PDF function with your implementation
             #PDF(latest_folder, step_num)
-    
+        
+        def toggle_topmost(state):
+            process_window.wm_attributes("-topmost", state)
+            
         # Create a new Toplevel window
         process_window = tk.Toplevel()
         process_window.title("Data Analysis")
-    
+        
+        # Ensure the window stays on top until it loses focus
+        process_window.wm_attributes("-topmost", True)
+        
+        process_window.lift()
+        
         custom_font = ("Bold", 16)
     
         # Labels
@@ -1455,7 +1650,67 @@ def UI():
             canvas2 = FigureCanvasTkAgg(fig2, master=plot_frame2)
             canvas2.draw()
             canvas2.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-    
+            
+            plot_results_plotly()
+            
+        def plot_results_plotly():
+            global ipj_new_folder_path
+            # Assuming `ipj` is part of your global state or passed in as a parameter
+            data_dict = global_state.ipj.data_analysis(mode, [low_bound.get(), high_bound.get()])
+            
+            # Create the first figure for Jitter data
+            jitter_trace = go.Scatter(
+                x=data_dict['t_window'],
+                y=data_dict['d_window'],
+                mode='lines',
+                name='Jitter',
+                line=dict(color='red')
+            )
+        
+            jitter_layout = go.Layout(
+                title='In-Position Stability vs Time',
+                xaxis=dict(title='Time (seconds)'),
+                yaxis=dict(title=f'Position ({ipj_err_unit.get()})'),
+                autosize=True,
+                margin=dict(l=50, r=50, t=50, b=50),
+            )
+        
+            jitter_fig = go.Figure(data=[jitter_trace], layout=jitter_layout)
+        
+            # Create the second figure for CRMS data
+            crms_trace = go.Scatter(
+                x=data_dict['freq'],
+                y=data_dict['CRMS'],
+                mode='lines',
+                name='CRMS',
+                line=dict(color='blue')
+            )
+        
+            crms_layout = go.Layout(
+                title='Cumulative RMS',
+                xaxis=dict(title='Frequency (Hz)'),
+                yaxis=dict(title=f'Cumulative RMS ({ipj_unit.get()})'),
+                xaxis_range=[0, crms_freq.get()],
+                autosize=True,
+                margin=dict(l=50, r=50, t=50, b=50),
+            )
+        
+            crms_fig = go.Figure(data=[crms_trace], layout=crms_layout)
+        
+            ipj_new_folder_path = ipj_PDF_save_path()
+            
+            # Generate the HTML filename
+            html_file = str(ipj_sys.get() + '-' + str(ipj_axis.get()) + "_In_Position_Jitter.html")
+            html_save = os.path.join(ipj_new_folder_path, html_file)
+            
+            # Write both figures to the HTML file
+            with open(html_save, 'w') as f:
+                f.write(pio.to_html(jitter_fig, full_html=False, include_plotlyjs='cdn'))
+                f.write(pio.to_html(crms_fig, full_html=False, include_plotlyjs='cdn'))
+            
+            # Open the saved HTML file in the default web browser
+            webbrowser.open('file://' + os.path.realpath(html_save))
+            
         btn_plot_data = tk.Button(process_window, text="Plot Data", command=plot_data_func)
         btn_plot_data.grid(row=7, column=0, pady=10)
     
@@ -1474,7 +1729,7 @@ def UI():
         screen_height = process_window.winfo_screenheight()
     
         # Calculate the x and y coordinates to center the window
-        x_cordinate = int((screen_width / 2) - (window_width / 2))
+        x_cordinate = int((screen_width / 3.5) - (window_width / 2))
         y_cordinate = int((screen_height / 2) - (window_height / 2))
     
         # Set the geometry of the window to center it on the screen
@@ -1485,68 +1740,9 @@ def UI():
     def ipj_PDF():
         def finish_test():
             pdf_window.destroy()
-            
+            window.after(0, lambda: ipj_btn_run_rot.config(state=tk.NORMAL))
         # This function sets up the PDF generation interface and logic in a Tkinter GUI
         def generate_pdf():
-            
-            def plot_results_plotly(new_folder_path):
-                # Assuming `ipj` is part of your global state or passed in as a parameter
-                data_dict = global_state.ipj.data_analysis(mode, [low_bound.get(), high_bound.get()])
-                
-                # Create the first figure for Jitter data
-                jitter_trace = go.Scatter(
-                    x=data_dict['t_window'],
-                    y=data_dict['d_window'],
-                    mode='lines',
-                    name='Jitter',
-                    line=dict(color='red')
-                )
-            
-                jitter_layout = go.Layout(
-                    title='In-Position Stability vs Time',
-                    xaxis=dict(title='Time (seconds)'),
-                    yaxis=dict(title=f'Position ({ipj_err_unit.get()})'),
-                    autosize=True,
-                    margin=dict(l=50, r=50, t=50, b=50),
-                )
-            
-                jitter_fig = go.Figure(data=[jitter_trace], layout=jitter_layout)
-            
-                # Create the second figure for CRMS data
-                crms_trace = go.Scatter(
-                    x=data_dict['freq'],
-                    y=data_dict['CRMS'],
-                    mode='lines',
-                    name='CRMS',
-                    line=dict(color='blue')
-                )
-            
-                crms_layout = go.Layout(
-                    title='Cumulative RMS',
-                    xaxis=dict(title='Frequency (Hz)'),
-                    yaxis=dict(title=f'Cumulative RMS ({ipj_unit.get()})'),
-                    xaxis_range=[0, crms_freq.get()],
-                    autosize=True,
-                    margin=dict(l=50, r=50, t=50, b=50),
-                )
-            
-                crms_fig = go.Figure(data=[crms_trace], layout=crms_layout)
-            
-                # Ensure the folder path exists
-                os.makedirs(new_folder_path, exist_ok=True)
-                
-                # Generate the HTML filename
-                html_file = str(sys_serial + '-' + str(ipj_axis.get()) + "_In_Position_Jitter.html")
-                html_save = os.path.join(new_folder_path, html_file)
-                
-                # Write both figures to the HTML file
-                with open(html_save, 'w') as f:
-                    f.write(pio.to_html(jitter_fig, full_html=False, include_plotlyjs='cdn'))
-                    f.write(pio.to_html(crms_fig, full_html=False, include_plotlyjs='cdn'))
-                
-                # Open the saved HTML file in the default web browser
-                webbrowser.open('file://' + os.path.realpath(html_save))
-                
             global fig
             plt.rcParams.update({'font.size': 6})
             fig, ax1, ax2, ax3, ax4 = AerotechFormat.makeTemplate()
@@ -1597,37 +1793,30 @@ def UI():
             ax4.text(.02, .7, 'Sample Rate: {} Hz'.format(1/global_state.ipj.time_array[1]), color='black', size=font_size_ax4)
             ax4.text(.02, .6, 'Sample Time: {} seconds'.format(np.max(global_state.ipj.time_array) + global_state.ipj.time_array[1]), color='black', size=font_size_ax4)
             print('PDF generated')
-    
-            # Save the figure as a PDF
-            start_path = ('O:/')
-            sys_serial = str(ipj_sys.get())
-            folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
-            pdf_file_path = folder_path + '/Customer Files/Plots'
-            folder_name = 'In Position Jitter Plots'
-            jitter_folder_path = os.path.join(pdf_file_path, folder_name)
-            os.makedirs(jitter_folder_path, exist_ok=True)
             
-            current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            new_folder_path = os.path.join(jitter_folder_path, f"{current_time}")
-            os.makedirs(new_folder_path, exist_ok=True)
-            output_file = str(sys_serial + '-' + str(ipj_axis.get()) + "_In_Position_Jitter.pdf")
-            save_file = new_folder_path + '/' + output_file
-        
+            output_file = str(ipj_sys.get() + '-' + str(ipj_axis.get()) + "_In_Position_Jitter.pdf")
+            save_file = ipj_new_folder_path + '/' + output_file
+            
             # Save the figure with tight bounding box
             fig.savefig(save_file, bbox_inches='tight')
             print('PDF saved')
             
-            plot_results_plotly(new_folder_path)
-            
         def save_csv():
             global_state.ipj.write_to_csv(csv_file_entry.get(),ipj_sys.get(),ipj_axis.get())
-            print('CSV saved')
+        
+        def toggle_topmost(state):
+            pdf_window.wm_attributes("-topmost", state)
         
         pdf_title_font = ('Bold', 16)    
         
         # Create the window
         pdf_window = tk.Toplevel()
         pdf_window.title("Generate PDF and CSV")
+        
+        # Ensure the window stays on top until it loses focus
+        pdf_window.wm_attributes("-topmost", True)
+        
+        pdf_window.lift()
         
         pdf_label = tk.Label(pdf_window, text='Generate PDF and CSV', font=pdf_title_font)
         pdf_label.grid(row=0, column=0, pady=10)
@@ -1662,18 +1851,23 @@ def UI():
         window_height = pdf_window.winfo_height()
         screen_width = pdf_window.winfo_screenwidth()
         screen_height = pdf_window.winfo_screenheight()
-        x_cordinate = int((screen_width / 2) - (window_width / 2))
+        x_cordinate = int((screen_width / 3.5) - (window_width / 2))
         y_cordinate = int((screen_height / 2) - (window_height / 2))
         pdf_window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
         
+    global ipj_direction, ipj_signal
+    ipj_direction = 'Pos'
+    ipj_signal = a1data.mode.pos_fbk
+    
     def ipj_direction_def():
-        global direction
-        if direction.get() == "Positive":
-            direction = 'pos'
-        elif direction.get() == "Negative":
-            direction = 'neg'
+        global ipj_direction
+        if ipj_direction.get() == "Positive":
+            ipj_direction = 'pos'
+        elif ipj_direction.get() == "Negative":
+            ipj_direction = 'neg'
         else:
-            direction = 'None'
+            ipj_direction = 'None'
+    
             
     def ipj_signal_def(*args):
         global ipj_signal
@@ -1709,48 +1903,7 @@ def UI():
             if option[0] == selected_text:
                 return option[1]
         return None  # If not found, return None or handle it as needed
-    
-    def open_rotary_Plot():
-        axis = ipj_axis.get()
-        sys_serial = ipj_sys.get()
 
-        start_path = ('O:/')
-        folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
-        pdf_file_path = folder_path + '/Customer Files/Plots'
-
-        if os.path.exists(pdf_file_path):
-            try:
-                output_file = str(sys_serial + '-' + axis + "_Accuracy.pdf")
-                pdf = pdf_file_path + '/' + output_file
-                os.startfile(pdf)
-            except:
-                pass
-            try:
-                output_file = str(sys_serial + '-' + axis + "_Verification.pdf")
-                pdf = pdf_file_path + '/' + output_file
-                os.startfile(pdf)
-            except:
-                pass
-        else:
-            print(f"File '{pdf_file_path}' does not exist.")
-    
-    # Load stored data or set defaults
-    ipj_axis_value = stored_data.get("axis_name", "X")
-    ipj_signal_value = stored_data.get("signal", 0)
-    ipj_probe_value = stored_data.get("probe_axis", 'X')
-    ipj_sens_value = stored_data.get("scale factor (user units)", '0.0025')
-    ipj_unit_value = stored_data.get("units", 'mm')
-    ipj_err_unit_value = stored_data.get("error_units", 'mm')
-    ipj_sample_value = stored_data.get("sample_rate", "1 kHz")
-    ipj_dwell_value = stored_data.get("duration", 1)
-    ipj_sys_value = stored_data.get("system_serial_number", '"System Serial Number"')
-    ipj_st_value = stored_data.get("part_number", '"Part Number"')
-    ipj_opName_value = stored_data.get("operator", '"Your Initials"')
-    ipj_temp_value = stored_data.get("temp", 20)
-    ipj_comm_value = stored_data.get("comments", "")
-    ipj_direction_value = stored_data.get("direction", 'pos')
-    
-    
     ipj_lbl_axis = tk.Label(master=tab2, text="Axis Name", width=25, height=1)
     ipj_lbl_axis.grid(row=tab2.axis_row, column=0, padx=5, pady=5)
 
@@ -1859,67 +2012,11 @@ def UI():
     ipj_ent_comments = tk.Entry(master=tab2, textvariable=ipj_comm, width=25)
     ipj_ent_comments.grid(row=tab2.com_row, column=1, columnspan=3, padx=5, pady=5)
 
-    #btn_import_rot = tk.Button(master=tab1, text="Import Data", width=30, height=1, command=import_data_rotary)
-    #btn_import_rot.grid(row=run_row, column=1, padx=5, pady=5)
-
-    ipj_lbl_import_rot = tk.Label(master=tab2, text='', anchor='w')
-    ipj_lbl_import_rot.grid(row=tab2.run_row, column=1, padx=5, pady=5, columnspan=3)
+    btn_import_rot = tk.Button(master=tab2, text="Import Data", width=30, height=1, command=import_ipj_data)
+    btn_import_rot.grid(row=tab2.run_row, column=1, padx=5, pady=5)
 
     ipj_btn_run_rot = tk.Button(master=tab2, text="Run", width=25, height=1, command=start_jittertest)
     ipj_btn_run_rot.grid(row=tab2.run_row, column=0, padx=5, pady=5)
-
-    ipj_btn_open_rot = tk.Button(master=tab2, text="Open Plot", width=25, height=1, command=open_rotary_Plot)
-    ipj_btn_open_rot.grid(row=tab2.run_row, column=2, padx=5, pady=5)
-
-    # Create a Frame to hold the Text widget and the Scrollbar
-    frame1 = tk.Frame(tab2)
-
-    # Create the Text widget
-    txt_outStr1 = tk.Text(master=frame1, state=tk.DISABLED, height=10, fg='white', bg='black')
-
-    # Create the Scrollbar widget
-    outStr_scroll1 = tk.Scrollbar(master=frame1, orient=tk.VERTICAL)
-
-    # Link the Scrollbar to the Text widget
-    txt_outStr1.configure(yscrollcommand=outStr_scroll1.set)
-    outStr_scroll1.config(command=txt_outStr1.yview)
-
-    # Pack the Text widget and the Scrollbar inside the Frame
-    txt_outStr1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    outStr_scroll1.pack(side=tk.LEFT, fill=tk.Y)
-
-    # Grid the Frame containing the Text widget and the Scrollbar
-    frame1.grid(row=tab2.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
-
-    # Create the logger object
-    logger2 = TextLogger(txt_outStr1)
-    
-    # Configure the grid to expand the Frame
-    tab2.grid_rowconfigure(tab2.out_row, weight=1)
-    tab2.grid_columnconfigure(0, weight=1)
-    
-    def ipj_on_closing():
-        # Save user inputs before closing
-        user_data = {
-            "axis_name": ipj_axis.get(),  # Entry widget
-            "signal": ipj_signal_var.get(),  # OptionMenu
-            "probe_axis": ipj_probe.get(),  # Entry widget
-            "scale factor (user units)": ipj_sens.get(),  # Entry widget
-            "units": ipj_unit.get(),  # OptionMenu
-            "error_units": ipj_err_unit.get(),  # OptionMenu
-            "sample_rate": ipj_samp.get(),  # OptionMenu
-            "duration": ipj_dwell.get(),  # Entry widget
-            "system_serial_number": ipj_sys.get(),  # Entry widget
-            "part_number": ipj_st.get(),  # Entry widget
-            "operator": ipj_opName.get(),  # Entry widget
-            "temp": ipj_temp.get(),  # Entry widget
-            "comments": ipj_comm.get(),  # Entry widget
-            "direction": ipj_direction_var.get()  # Radiobutton selection
-            }
-        save_user_inputs(user_data)
-        window.destroy()
-    
-    window.protocol("WM_DELETE_WINDOW", ipj_on_closing)    
 
 # =============================================================================
 # Tab 3
@@ -1979,57 +2076,56 @@ def UI():
     # Add the vertical separator to the frame
     ttk.Separator(master=tab3, orient='vertical').grid(row=tab3.h1_row, column=4, rowspan=21, sticky='nsw', pady=(4, 0))
     
-    # Load stored data or set defaults
-    ins_axis_value = stored_data.get("axis_name", "X")
-    ins_start_value = stored_data.get("start_position", 10)
-    ins_step_value = stored_data.get("step_size", 30)
-    ins_num_step_value = stored_data.get("num_step", 1)
-    ins_signal_value = stored_data.get("signal", 0)
-    ins_probe_value = stored_data.get("probe_axis", 'None')
-    ins_sens_value = stored_data.get("scale factor (user units)", '0.0025')
-    ins_speed_value = stored_data.get("speed", 5)
-    ins_ramp_v_value = stored_data.get("ramp_rate", 1000)
-    ins_dwell_value = stored_data.get("dwell", 1)
-    ins_ipj_value = stored_data.get("jitter",'')
-    ins_settle_value = stored_data.get("settle",'')
-    ins_unit_value = stored_data.get("units", 'mm')
-    ins_err_unit_value = stored_data.get("error_units", 'mm')
-    ins_sample_value = stored_data.get("sample_rate", "1 kHz")
-    ins_sys_value = stored_data.get("system_serial_number", '"System Serial Number"')
-    ins_st_value = stored_data.get("part_number", '"Part Number"')
-    ins_opName_value = stored_data.get("operator", '"Your Initials"')
-    ins_temp_value = stored_data.get("temp", 20)
-    ins_comm_value = stored_data.get("comments", "")
+    frame2 = tk.Frame(master=tab3)
 
+    txt_outStr2 = tk.Text(master=frame2, state=tk.DISABLED, height=10, fg='white', bg='black')
+    outStr_scroll2 = tk.Scrollbar(master=frame2, orient=tk.VERTICAL)
+
+    txt_outStr2.configure(yscrollcommand=outStr_scroll2.set)
+    outStr_scroll2.config(command=txt_outStr2.yview)
+
+    txt_outStr2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    outStr_scroll2.pack(side=tk.LEFT, fill=tk.Y)
+
+    frame2.grid(row=tab3.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
+
+    text_logger2 = TextLogger(txt_outStr2)
+    
+    tab3.grid_rowconfigure(tab3.out_row, weight=1)
+    tab3.grid_columnconfigure(0, weight=1)
+    
     def start_incrementalsteptest():
         global_state.reset()
         ins_btn_run_rot.config(state=tk.DISABLED)
         threading.Thread(target=run_incrementalsteptest).start()
-        #threading.Thread(target=moveandsettle_live_plot).start()
+        setup_error_logging(txt_outStr2)
+        
+        syst.excepthook = log_exception
 
     def run_incrementalsteptest():
+        global window_open
         # Save user inputs before closing
         user_data = {
-            "axis_name": ins_axis.get(),
-            "start_position": ins_start.get(),
-            "step_size": ins_step.get(),
-            "num_step": ins_num_step.get(),
-            "signal": ins_signal_var.get(),
-            "probe_axis": ins_probe.get(),
-            "scale factor (user units)": ins_sens.get(),
-            "speed": ins_speed_.get(),
-            "ramp_rate": ins_ramp_v.get(),
-            "dwell": ins_dwell.get(),
-            "jitter": ins_ipj.get(),
-            "settle": ins_settle.get(),
-            "units": ins_unit.get(),
-            "error_units": ins_err_unit.get(),
-            "sample_rate": ins_samp.get(),
-            "system_serial_number": ins_sys.get(),
-            "part_number": ins_st.get(),
-            "operator": ins_opName.get(),
-            "temp": ins_temp.get(),
-            "comments": ins_comm.get()
+            "ins_axis_name": ins_axis.get(),
+            "ins_start_position": ins_start.get(),
+            "ins_step_size": ins_step.get(),
+            "ins_num_step": ins_num_step.get(),
+            "ins_signal": ins_signal_var.get(),
+            "ins_probe_axis": ins_probe.get(),
+            "ins_scale factor (user units)": ins_sens.get(),
+            "ins_speed": ins_speed_.get(),
+            "ins_ramp_rate": ins_ramp_v.get(),
+            "ins_dwell": ins_dwell.get(),
+            "ins_jitter": ins_ipj.get(),
+            "ins_settle": ins_settle.get(),
+            "ins_units": ins_unit.get(),
+            "ins_error_units": ins_err_unit.get(),
+            "ins_sample_rate": ins_samp.get(),
+            "ins_system_serial_number": ins_sys.get(),
+            "ins_part_number": ins_st.get(),
+            "ins_operator": ins_opName.get(),
+            "ins_temp": ins_temp.get(),
+            "ins_comments": ins_comm.get()
         }
         save_user_inputs(user_data)
         try:
@@ -2039,12 +2135,26 @@ def UI():
 
         finally:
             gc.collect()  
-            if global_state.clientsocket:
-                global_state.clientsocket.close()
-            window.after(0, ins_btn_run_rot.config, {'state': tk.NORMAL})
+            try:
+                # Only try to interact with Tkinter if the window is still open
+                if window_open:
+                    # Schedule a callback to change the button state if the window is still valid
+                    window.after(0, lambda: ins_btn_run_rot.config(state=tk.NORMAL))
+                else:
+                    return
+            except RuntimeError:
+                return
             
     def incrementalsteptest():
-        syst.stdout = logger3
+        def prompt_user(message):
+            text_logger2.write(message)
+            txt_outStr2.delete(1.0, tk.END)
+            return text_logger2.read_input()
+
+        def clear_text():
+            txt_outStr2.delete(1.0, tk.END)
+        
+        syst.stdout = text_logger2
         global folder
         axis = str(ins_axis.get())
         sample_rate = ins_get_sample_rate_value()
@@ -2061,6 +2171,34 @@ def UI():
         speed = int(ins_speed_.get())
         ramp_value = int(ins_ramp_v.get())
         
+        try:
+            if ins_dir == 'None':
+                ins_dir_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
+                if ins_dir_none == ">":
+                    clear_text()
+                else:
+                    ins_dir_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
+        except NameError:
+            ins_dir_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
+            if ins_dir_none == ">":
+                clear_text()
+            else:
+                ins_dir_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
+                
+        try:
+            if ins_signal == 'None':
+                ins_sig_none = prompt_user("Please select a signal. Press 'Enter' when ready.")
+                if ins_sig_none == ">":
+                    clear_text()
+                else:
+                    ins_sig_none = prompt_user("Please select a signal. Press 'Enter' when ready.")
+        except NameError:
+            ins_sig_none = prompt_user("Please select a signal. Press 'Enter' when ready.")
+            if ins_sig_none == ">":
+                clear_text()
+            else:
+                ins_sig_none = prompt_user("Please select a signal. Press 'Enter' when ready.")
+                
         try:
             controller = a1.Controller.connect()
             controller.start()
@@ -2121,16 +2259,56 @@ def UI():
             global_state.ins = incremental_step(axis, sample_rate, step_size, s, t_ms, sensitivity, probe_axis, num_steps,
                                               units=units,
                                               error_units=error_units,
-                                              direction=direction, 
+                                              direction=ins_dir, 
                                               t_ave=t_ave,
                                               start_pos=start_pos,
                                               speed=speed, 
                                               ramp_value=ramp_value,
+                                              import_data=False,
+                                              text_widget=txt_outStr2
                                               )
             global_state.ins.test(controller)
             
+    def import_ins_data():
+        syst.stdout = text_logger2
+        
+        global folder
+        axis = str(ins_axis.get())
+        sample_rate = ins_get_sample_rate_value()
+        step_size = float(ins_step.get())
+        s = float(ins_ipj.get())
+        t_ms = float(ins_settle.get())
+        sensitivity = float(ins_sens.get())
+        probe_axis = str(ins_probe.get())
+        num_steps = int(ins_num_step.get())
+        units = str(ins_unit.get())
+        error_units = str(ins_err_unit.get())
+        t_ave = int(ins_dwell.get())
+        start_pos = int(ins_start.get())
+        speed = int(ins_speed_.get())
+        ramp_value = int(ins_ramp_v.get())
+        
+        global_state.ins = incremental_step(axis, sample_rate, step_size, s, t_ms, sensitivity, probe_axis, num_steps,
+                                          units=units,
+                                          error_units=error_units,
+                                          direction=ins_dir, 
+                                          t_ave=t_ave,
+                                          start_pos=start_pos,
+                                          speed=speed, 
+                                          ramp_value=ramp_value,
+                                          import_data=True,
+                                          text_widget=txt_outStr2
+                                          )
+        
+        file = filedialog.askopenfilename(multiple=False)
+        
+        global_state.ins.populate(file=file)
+        ins_data_filtering()
+        ins_process_data()
+    
     def ins_data_filtering():
         def apply_button_click():
+            toggle_topmost(False)
             butter_func()
             filter_window.destroy()
         def reset_func():
@@ -2151,11 +2329,19 @@ def UI():
             global_state.Comments = f'\n{type_var} pass butterworth filter \nwith a {omega_c} Hz cut-off frequency \napplied'
             messagebox.showinfo("Butterworth Filter Applied", "Butterworth Filter Applied")
         
+        def toggle_topmost(state):
+            filter_window.wm_attributes("-topmost", state)
+        
         # Create a new Toplevel window instead of a new Tk window
         filter_window = tk.Toplevel()
         filter_window.title("Data Filtering")
         filter_window.grab_set()
-
+        
+        # Ensure the window stays on top until it loses focus
+        filter_window.wm_attributes("-topmost", True)
+        
+        filter_window.lift()
+        
         custom_title_font = ("Bold", 16)
         custom_header1_font = ("Bold", 14)
         custom_header2_font = ("Bold", 12)
@@ -2222,30 +2408,78 @@ def UI():
         
         filter_window.wait_window()
     
+    def ins_PDF_save_path():
+        # Save the figure as a PDF
+        start_path = ('O:/')
+        sys_serial = str(ins_sys.get())
+        folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
+        pdf_file_path = folder_path + '/Customer Files/Plots'
+        folder_name = 'Minimum Step Plots'
+        new_file_path = os.path.join(pdf_file_path,folder_name)
+        os.makedirs(new_file_path,exist_ok=True)
+        
+        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        new_folder_path = os.path.join(new_file_path, f"{current_time}")
+        os.makedirs(new_folder_path, exist_ok=True)
+        
+        
+        return new_folder_path
+    
     def ins_process_data():
-        global html_file_path
+        global html_file_path, ins_new_folder_path
         def next_function():
-            ins_PDF()
-            criteria()
+            toggle_topmost(False)
             analyze_window.destroy()
+            ins_PDF()
+            
+        global open_criteria
+        open_criteria = 'no'
+        
+        def crit_def():
+            """Callback function for the Checkbutton to update open_criteria based on checkbox state."""
+            global open_criteria  # Declare open_criteria as global to modify it
+            if crit_var.get() == 'yes':
+                open_criteria = 'yes'
+            else:
+                open_criteria = 'no'
+        
+        def toggle_topmost(state):
+            analyze_window.wm_attributes("-topmost", state)
+        
         # Create a new Toplevel window
         analyze_window = tk.Toplevel()
         analyze_window.title("Data Analysis")
         
+        # Ensure the window stays on top until it loses focus
+        analyze_window.wm_attributes("-topmost", True)
+        
+        analyze_window.lift()
+        
         # Define custom fonts
         custom_font = ("Bold", 16)
-        header_font = ("Bold", 12)
-                
+        
         # Labels
         label = tk.Label(analyze_window, text="Data Analysis", font=custom_font)
         label.grid(row=0, column=0, padx=10, pady=10)
         
         step_num = tk.Label(analyze_window, text='Step To Plot')
         step_num.grid(row=1, column=0, padx=10, pady=10)
-    
+        
+        # Entry for step number
         step_num_var = tk.IntVar(value=0)
         step_num_entry = tk.Entry(analyze_window, textvariable=step_num_var)
         step_num_entry.grid(row=2, column=0, pady=2)
+        
+        # Checkbox for ASME Criteria Results
+        crit = tk.Label(analyze_window, text='Open ASME Criteria Results?')
+        crit.grid(row=3, column=0, padx=10, pady=10)
+        
+        # Checkbutton to toggle ASME criteria results
+        crit_var = tk.StringVar(value='no')  # Create a StringVar to hold the value of the checkbox
+        crit_checkbutton = tk.Checkbutton(
+            master=analyze_window, variable=crit_var, onvalue="yes", offvalue="no", command=crit_def
+            )
+        crit_checkbutton.grid(row=4, column=0, padx=10, pady=1)
         
         def extra_signals(*args):
             global extra_signal
@@ -2260,27 +2494,27 @@ def UI():
                 extra_signal = a1data.mode.pos_fbk
         
         lbl_extra_signal = tk.Label(analyze_window, text='Additional Signals To Plot')
-        lbl_extra_signal.grid(row=3, column=0, padx=10, pady=10)
+        lbl_extra_signal.grid(row=5, column=0, padx=10, pady=10)
         
         extra_signal_var = tk.StringVar()
         extra_signal_var.trace_add('write', extra_signals)
         extra_signal_options = ['None', 'Position Command', 'Position Feedback']
         extra_signal_menu = tk.OptionMenu(analyze_window, extra_signal_var, *extra_signal_options)
-        extra_signal_menu.grid(row=4, column=0, padx=10, pady=2)
+        extra_signal_menu.grid(row=6, column=0, padx=10, pady=2)
         
         # Function to handle analysis logic
         def analyze_func():
-            global data, ins, data_table, criteria_table, B, criteria
+            global data, ins, data_table, criteria_table, B, criteria, ins_new_folder_path
             
             data = global_state.ins.data_analysis()
     
             def plot_results():
-                global html_file_path
+                global html_file_path, ins_new_folder_path
                 # Clear any existing plots
                 plt.clf()
                 
                 # Configure the figure size
-                fig = plt.figure(figsize=(15, 3))  # Adjusted size to fit both plots vertically
+                #fig = plt.figure(figsize=(15, 3))  # Adjusted size to fit both plots vertically
                 plt.rcParams.update({'font.size': 11})
             
                 # Plotting the Staircase Plot
@@ -2329,7 +2563,8 @@ def UI():
                 # Embed the plots in Tkinter canvas
                 embed_plot_in_canvas(stair_plt, step_plt, stair_plot_frame, step_plot_frame)
                 
-                global_state.ins.plot_to_plotly(step_num=step_num_var.get(), legend_loc='upper right', legend_size=7)
+                ins_new_folder_path = ins_PDF_save_path()
+                global_state.ins.plot_to_plotly(ins_new_folder_path, sys_serial=ins_sys.get(), step_num=step_num_var.get(), legend_loc='upper right', legend_size=7)
                 
             def embed_plot_in_canvas(stair_plot, step_plot, stair_canvas_frame, step_canvas_frame):
                 # Clear any existing plots in the frames
@@ -2358,202 +2593,85 @@ def UI():
                 height = event.height / 100
                 plot.set_size_inches(width, height)
                 canvas.draw()
+            
+            def criteria():
+                global ins_new_folder_path
                 
+                # Calculate criteria values
+                criteria = [
+                    global_state.ins.A1(),
+                    global_state.ins.A2(data, a1data.mode.positive_direction),
+                    global_state.ins.A3(data, a1data.mode.positive_direction),
+                    global_state.ins.unidirectional_criteria(data, a1data.mode.positive_direction),
+                    global_state.ins.A1(),
+                    global_state.ins.A2(data, a1data.mode.negative_direction),
+                    global_state.ins.A3(data, a1data.mode.negative_direction),
+                    global_state.ins.unidirectional_criteria(data, a1data.mode.negative_direction),
+                    global_state.ins.B1(),
+                    global_state.ins.B2(data),
+                    global_state.ins.B3(data),
+                    global_state.ins.bidirectional_criteria(data)
+                ]
+            
+                # Format criteria results for text file
+                criteria_text = """
+            ASME Criteria Results
+            ======================
+            Direction of Motion  |  A1  |  A2  |  A3  | Criteria Satisfied? |  B1  |  B2  |  B3  | Criteria Satisfied?
+            ---------------------------------------------------------------------------------------------------------
+            Forward              |  {}   |  {}   |  {}   | {}                   |      |      |      |     
+            Reverse              |  {}   |  {}   |  {}   | {}                   |      |      |      |     
+            Combined             |      |      |      |                     |  {}   |  {}   |  {}   | {}
+            ---------------------------------------------------------------------------------------------------------
+            """.format(
+                    *['Y' if val else 'N' for val in criteria[:4]],  # Forward
+                    *['Y' if val else 'N' for val in criteria[4:8]],  # Reverse
+                    *['Y' if val else 'N' for val in criteria[8:12]]  # Combined
+                )
+            
+                # Format data results for text file
+                data_text = """
+            Data Analysis Results
+            ======================
+                                            | Forward   | Reverse   | Combined
+            -------------------------------------------------------------------
+            Sample Mean ({}):               | {:.3e} | {:.3e} | {:.3e}
+            Sample Standard Deviation ({}): | {:.3e} | {:.3e} | {:.3e}
+            -------------------------------------------------------------------
+            """.format(
+                    global_state.ins.units,
+                    data['Forward Sample Mean'], data['Reverse Sample Mean'], data['Combined Sample Mean'],
+                    global_state.ins.units,
+                    data['Forward Sample Standard Deviation'], data['Reverse Sample Standard Deviation'], data['Combined Sample Standard Deviation']
+                )
+            
+                # Combine both tables into full text content
+                full_text_content = f"{criteria_text}\n{data_text}"
+            
+                # Create a temporary text file for display
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode='w') as tmp_file:
+                    text_file_path = tmp_file.name
+                    tmp_file.write(full_text_content)
+                    webbrowser.open(f"file://{os.path.realpath(text_file_path)}")
+                
+                # Save to a text file in the specified folder
+                text_file = os.path.join(ins_new_folder_path, 'ASME_Criteria_Results.txt')
+                with open(text_file, 'w') as f:
+                    f.write(full_text_content)
+                
+                print(f"Text file saved to: {text_file}")
+
+
+                    
             plot_results()
-        
-        def criteria():
-            criteria = [
-                global_state.ins.A1(),
-                global_state.ins.A2(data, a1data.mode.positive_direction),
-                global_state.ins.A3(data, a1data.mode.positive_direction),
-                global_state.ins.unidirectional_criteria(data, a1data.mode.positive_direction),
-                global_state.ins.A1(),
-                global_state.ins.A2(data, a1data.mode.negative_direction),
-                global_state.ins.A3(data, a1data.mode.negative_direction),
-                global_state.ins.unidirectional_criteria(data, a1data.mode.negative_direction),
-                global_state.ins.B1(),
-                global_state.ins.B2(data),
-                global_state.ins.B3(data),
-                global_state.ins.bidirectional_criteria(data)
-            ]
-            
-            # Table Data
-            criteria_table = """<table>
-            <tr>
-                <th colspan = "2"></th>
-                <th colspan = "3">Criteria</th>
-                <th colspan = "3"></th>
-                <th colspan = "3">Criteria</th>
-                <th colspan = "2"></th>
-            </tr>
-            <tr>
-                <th colspan = "2">Direction of Motion</th>
-                <th>A1</th>
-                <th>A2</th>
-                <th>A3</th>
-                <th colspan = "2">Criteria Satisfied?</th>
-                <td></td>
-                <th>B1</th>
-                <th>B2</th>
-                <th>B3</th>
-                <th colspan = "2">Criteria Satisfied?</th>
-            </tr>
-            <tr>
-                <th colspan = "2">Forward</th>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td colspan = "2">{}</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td colspan = "2"></td>
-            </tr>
-            <tr>
-                <th colspan = "2">Reverse</th>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td colspan = "2">{}</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td colspan = "2"></td>
-            </tr>
-            <tr>
-                <th colspan = "2">Combined</th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td colspan = "2"></td>
-                <td></td>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td colspan = "2">{}</td>
-            </tr>
-            </table>
-            """.format(*['Yes' if val else 'No' for val in criteria])
-            
-            # Data Table Display
-            data_table = """<table>
-            <tr>
-                <th colspan = "3"></th>
-                <th colspan = "3">Direction of Motion</th>
-            </tr>
-            <tr>
-                <th colspan = "3"></th>
-                <th>Forward</th>
-                <th>Reverse</th>
-                <th>Combined</th>
-            </tr>
-            <tr>
-                <th colspan = "3">Sample Mean, X<sub>inc</sub> {}</th>
-                <td>{:.3e}</td>
-                <td>{:.3e}</td>
-                <td>{:.3e}</td>
-            </tr>
-            <tr>
-                <th colspan = "3">Sample Standard Deviation, s<sub>inc</sub> {}</th>
-                <td>{:.3e}</td>
-                <td>{:.3e}</td>
-                <td>{:.3e}</td>
-            </tr>
-            <table>
-            """.format(global_state.ins.units, data['Forward Sample Mean'], data['Reverse Sample Mean'], data['Combined Sample Mean'],
-                       global_state.ins.units, data['Forward Sample Standard Deviation'], data['Reverse Sample Standard Deviation'],
-                       data['Combined Sample Standard Deviation'])
-    
-            # Combine both tables in one HTML content
-            full_html_content = f"""
-            <html>
-            <head>
-                <title>Data Analysis Display</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; }}
-                    table {{ border-collapse: collapse; margin: 20px 0; }}
-                    th, td {{ padding: 8px; text-align: center; }}
-                </style>
-            </head>
-            <body>
-                <h1>ASME Criteria Table</h1>
-                {criteria_table}
-                <h1>Data Table</h1>
-                {data_table}
-            </body>
-            </html>
-            """
-            
-            # Create a temporary HTML file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp_file:
-                html_file_path = tmp_file.name
-                tmp_file.write(full_html_content.encode("utf-8"))
-            
-            def open_criteria():
-                criteria = tk.Toplevel()
-                criteria.title('Open Criteria Results')
-                
-                # Make the window modal and bring it to the front
-                criteria.grab_set()
-                criteria.focus_set()
-                criteria.attributes('-topmost', True)
-                
-                lbl_criteria = tk.Label(criteria, text='Would you like to view the ASME criteria results?')
-                lbl_criteria.grid(row=0,column=0,padx=10,pady=10)
-                
-                def on_yes():
-                    # Open the HTML file in the default web browser
-                    webbrowser.open(f"file://{os.path.realpath(html_file_path)}")
-                    
-                    # Make the window modal and bring it to the front
-                    analyze_window.grab_set()
-                    analyze_window.focus_set()
-                    analyze_window.attributes('-topmost', True)
-                    
-                    criteria.destroy()
-                    
-                def on_no():
-                    # Make the window modal and bring it to the front
-                    analyze_window.grab_set()
-                    analyze_window.focus_set()
-                    analyze_window.attributes('-topmost', True)
-                    
-                    criteria.destroy()
-                    return
-                
-                # Frame to hold the buttons
-                button_frame = tk.Frame(criteria)
-                button_frame.grid(row=1, column=0, pady=10)
-                
-                yes_button = tk.Button(button_frame, text='Yes', command=on_yes)
-                yes_button.pack(side=tk.LEFT, padx=(0,5))
-                
-                no_button = tk.Button(button_frame, text='No', command=on_no)
-                no_button.pack(side=tk.LEFT,padx=(5,0))
-                
-                # Center the window on the screen
-                criteria.update_idletasks()
-                window_width = criteria.winfo_width()
-                window_height = criteria.winfo_height()
-                screen_width = criteria.winfo_screenwidth()
-                screen_height = criteria.winfo_screenheight()
-            
-                x_cordinate = int((screen_width / 2) - (window_width / 2))
-                y_cordinate = int((screen_height / 2) - (window_height / 2))
-                criteria.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
-            
-                criteria.wait_window()
-                
-            open_criteria()
-            
+            if open_criteria == 'yes':
+                criteria()
         # Analyze Button
         analyze_button = tk.Button(analyze_window, text="Data Analysis", command=analyze_func)
-        analyze_button.grid(row=5, column=0, pady=10)
+        analyze_button.grid(row=7, column=0, pady=10)
         
         next_button = tk.Button(analyze_window, text='Next', command=next_function)
-        next_button.grid(row=6,column=0,pady=10)
+        next_button.grid(row=8,column=0,pady=10)
         
         # Finalize window geometry
         analyze_window.update_idletasks()
@@ -2561,25 +2679,28 @@ def UI():
         window_height = analyze_window.winfo_height()
         screen_width = analyze_window.winfo_screenwidth()
         screen_height = analyze_window.winfo_screenheight()
-        x_cordinate = int((screen_width / 2) - (window_width / 2))
+        x_cordinate = int((screen_width / 3.5) - (window_width / 2))
         y_cordinate = int((screen_height / 2) - (window_height / 2))
         analyze_window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
         
         analyze_window.wait_window()
+
     def ins_PDF():
-        def pdf_button_click():
-            gen_PDF()
-            
-        def end_test():
-            pdf_window.destroy()
-            
+        global ins_new_folder_path
         def finish_test():
             pdf_window.destroy()
+            
+            window.after(0, lambda: ins_btn_run_rot.config(state=tk.NORMAL))  # Make the update thread-safe
             
         # Create a new Toplevel window instead of a new Tk window
         pdf_window = tk.Toplevel()
         pdf_window.title("Generate PDF and CSV")
-    
+        
+        # Ensure the window stays on top until it loses focus
+        pdf_window.wm_attributes("-topmost", True)
+        
+        pdf_window.lift()
+        
         title_font = ("Bold", 16)
         header_font = ("Bold", 12)
         
@@ -2618,7 +2739,7 @@ def UI():
             font_size_ax4 = max(7, ax4_height * 40)
             
             if ins_probe.get() == 'None':
-                if extra_signal == 'Position Command':
+                if extra_signal == a1data.mode.pos_com:
                     # Upper Step Plot
                     ax1_up = plt.subplot2grid((14, 3), (2, 0), rowspan=3, colspan=3)
                     ax1_up.plot(global_state.ins.time_array, global_state.ins.pos_fbk, '-r', label='Position Feedback')
@@ -2635,7 +2756,7 @@ def UI():
                     plt.xlabel('Time (seconds)')
         
             else:
-                if extra_signal == 'Position Command':
+                if extra_signal == a1data.mode.pos_com:
                     #Upper Step Plot
                     ax1_up = plt.subplot2grid((14, 3),(2,0), rowspan = 3, colspan = 3)
                     ax1_up.plot(global_state.ins.time_array, global_state.ins.ai0, '-r', label='Analog Input')
@@ -2644,7 +2765,7 @@ def UI():
                     plt.ylabel('Position ({})'.format(global_state.ins.error_units))
                     plt.xlabel('Time (seconds)')
                     plt.legend(loc='upper right')
-                elif extra_signal == 'Position Feedback':
+                elif extra_signal == a1data.mode.pos_fbk:
                     #Upper Step Plot
                     ax1_up = plt.subplot2grid((14,3),(2,0), rowspan = 2, colspan = 3)
                     ax1_up.plot(global_state.ins.time_array, global_state.ins.ai0, '-r', label='Analog Input')
@@ -2662,13 +2783,13 @@ def UI():
                     plt.title('Incremental Step Test')
                     plt.ylabel('Position ({})'.format(global_state.ins.error_units))
                     plt.xlabel('Time (seconds)')
-            
+
             # Lower Step Plot
             ax1_down = plt.subplot2grid((14, 5), (6, 0), rowspan=4, colspan=5)
     
             # Directly plot onto the ax1_down axis
             global_state.ins.plot(ax=ax1_down, legend_loc='upper right', step_num=step_num_var.get(), fig_size=(8, 4))
-        
+
             #Results Text Box
             ax2.text(0.02,.8, 'Forward Mean: {:.3e} {}'.format(data['Forward Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax2)
             ax2.text(0.02,.725, 'Reverse Mean: {:.3e} {}'.format(data['Reverse Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax2)
@@ -2679,14 +2800,14 @@ def UI():
             #ax2.text(0.02,.35, 'Forward Unidirectional Criteria: {}'.format(criteria[3]), color = 'black', size = 8.5)
             #ax2.text(0.02,.275, 'Reverse Unidirectional Criteria: {}'.format(criteria[7]), color = 'black', size = 8.5)
             #ax2.text(0.02,.2, 'Bidirectional Criteria: {}'.format(criteria[11]), color = 'black', size = 8.5)
-                        
+          
             #Comments Text Box
-            ax3.text(.02, .8, 'Serial Number: {}'.format(ins_sys.get()), color = 'black', size = font_size_ax2)
-            ax3.text(.02, .725, 'Model Number: {}'.format(ins_st.get()), color = 'black', size = font_size_ax2)
-            ax3.text(.02, .65, 'Axis: {}'.format(ins_axis.get()), color = 'black', size = font_size_ax2)
-            ax3.text(.02, .575, 'Feedback: {}'.format(ins_signal_var.get()), color = 'black', size = font_size_ax2)
-            ax3.text(.02, .5, 'Comments: {}'.format(ins_comm.get()), color = 'black', size = font_size_ax2, verticalalignment = 'top')
-        
+            ax3.text(.02, .8, 'Serial Number: {}'.format(ins_sys.get()), color = 'black', size = font_size_ax3)
+            ax3.text(.02, .725, 'Model Number: {}'.format(ins_st.get()), color = 'black', size = font_size_ax3)
+            ax3.text(.02, .65, 'Axis: {}'.format(ins_axis.get()), color = 'black', size = font_size_ax3)
+            ax3.text(.02, .575, 'Feedback: {}'.format(ins_signal_var.get()), color = 'black', size = font_size_ax3)
+            ax3.text(.02, .5, 'Comments: {}'.format(ins_comm.get()), color = 'black', size = font_size_ax3, verticalalignment = 'top')
+
             if ins_err_unit.get() == 'nm':
                 StepSize = round(ins_step.get() * 1000,2)
             elif ins_err_unit.get() == 'um':
@@ -2697,37 +2818,23 @@ def UI():
                 StepSize = ins_step.get()
             #Test Conditions Text Box
             degree_sign = u'\N{DEGREE SIGN}'
-            ax4.text(.02, .8, 'Temperature: {}  {}C'.format(ins_temp.get(), degree_sign), color = 'black', size = font_size_ax2)
+            ax4.text(.02, .8, 'Temperature: {}  {}C'.format(ins_temp.get(), degree_sign), color = 'black', size = font_size_ax4)
             #ax4.text(.02, .725, 'IPS StDev: {} {}'.format(ins.s, ins.units), color = 'black', size = 9)
-            ax4.text(.02, .725, 'Move-and-Settle time: {} seconds'.format(global_state.ins.t_ms), color = 'black', size = font_size_ax2)
-            ax4.text(.02, .65, 'Average Time: {} seconds'.format(global_state.ins.t_ave), color = 'black', size = font_size_ax2)
-            ax4.text(.02, .575, 'Sample Rate: {} Hz'.format(1/global_state.ins.time_array[1]), color = 'black', size = font_size_ax2)
-            ax4.text(.02, .500, 'Sample Time: {:.3f} seconds'.format(np.max(global_state.ins.time_array) + global_state.ins.time_array[1]), color = 'black', size = font_size_ax2)
-            ax4.text(.02, .425, 'Step Size: {} {}'.format(StepSize,global_state.ins.error_units), color = 'black', size = font_size_ax2)
-            ax4.text(.02, .350, 'Start Position: {} {}'.format(global_state.ins.start_pos, global_state.ins.units), color = 'black', size = font_size_ax2)
-            ax4.text(.02, .275, 'Number of Steps: {}'.format(global_state.ins.num_steps), color = 'black', size = font_size_ax2)
+            ax4.text(.02, .725, 'Move-and-Settle time: {} seconds'.format(global_state.ins.t_ms), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .65, 'Average Time: {} seconds'.format(global_state.ins.t_ave), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .575, 'Sample Rate: {} Hz'.format(1/global_state.ins.time_array[1]), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .500, 'Sample Time: {:.3f} seconds'.format(np.max(global_state.ins.time_array) + global_state.ins.time_array[1]), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .425, 'Step Size: {} {}'.format(StepSize,global_state.ins.error_units), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .350, 'Start Position: {} {}'.format(global_state.ins.start_pos, global_state.ins.units), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .275, 'Number of Steps: {}'.format(global_state.ins.num_steps), color = 'black', size = font_size_ax4)
             #ax4.text(.02, .350, 'Axis: {}'.format(Axis.value), color = 'black', size = 9)
             
-            # Save the figure as a PDF
-            start_path = ('O:/')
-            sys_serial = str(ms_sys.get())
-            folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
-            pdf_file_path = folder_path + '/Customer Files/Plots'
-            folder_name = 'Minimum Step Plots'
-            new_file_path = os.path.join(pdf_file_path,folder_name)
-            os.makedirs(new_file_path,exist_ok=True)
+            output_file = str(ins_sys.get() + '-' + str(ins_axis.get()) + "_MinStep.pdf")
+            save_file = ins_new_folder_path + '/' + output_file
             
-            current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            new_folder_path = os.path.join(new_file_path, f"{current_time}")
-            os.makedirs(new_folder_path, exist_ok=True)
-            output_file = str(sys_serial + '-' + str(ms_axis.get()) + "_MinStep.pdf")
-            save_file = new_folder_path + '/' + output_file
-        
             # Save the figure with tight bounding box
             fig.savefig(save_file, bbox_inches='tight')
             print('PDF saved')
-            
-            #global_state.ms.GUI_plot_plotly(aero_dict, new_folder_path, ax=ax1, legend_size=20)
             
         # Button to generate PDF
         gen_pdf_button = tk.Button(pdf_window, text="Generate PDF", command=gen_PDF)
@@ -2741,8 +2848,7 @@ def UI():
         csv_file_entry.grid(row=7, column=0, pady=2)
         
         def save_csv():
-            global_state.ins.write_to_csv(csv_file_entry.get(),ipj_sys.get(),ipj_axis.get())
-            print('CSV saved')
+            global_state.ins.write_to_csv(csv_file_entry.get(),ins_sys.get(),ins_axis.get())
     
         export_csv_button = tk.Button(pdf_window, text="Save CSV", command=save_csv)
         export_csv_button.grid(row=8, column=0, padx=10, pady=10)
@@ -2756,21 +2862,25 @@ def UI():
         window_height = pdf_window.winfo_height()
         screen_width = pdf_window.winfo_screenwidth()
         screen_height = pdf_window.winfo_screenheight()
-        x_cordinate = int((screen_width / 2) - (window_width / 2))
+        x_cordinate = int((screen_width / 3.5) - (window_width / 2))
         y_cordinate = int((screen_height / 2) - (window_height / 2))
         pdf_window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
-        
+    
+    global ins_dir, ins_signal
+    ins_dir = a1data.mode.Unidirectional
+    ins_signal = a1data.mode.pos_fbk    
+    
     def ins_test_type_def():
-        global direction
+        global ins_dir
         if ins_direction.get() == "uni":
-            direction = a1data.mode.Unidirectional
+            ins_dir = a1data.mode.Unidirectional
         elif ins_direction.get() == "bi":
-            direction = a1data.mode.Bidirectional
+            ins_dir = a1data.mode.Bidirectional
         else:
-            direction = 'None'
+            ins_dir = 'None'
             
     def ins_signal_def(*args):
-        global signal
+        global ins_signal
         if ins_signal_var.get() == "Encoder":
             ins_signal = a1data.mode.pos_fbk
             ins_ent_probe["state"] = tk.DISABLED
@@ -2787,6 +2897,8 @@ def UI():
             ins_lbl_sens["state"] = tk.NORMAL
             ins_lbl_sample["state"] = tk.NORMAL
             ins_sample_menu["state"] = tk.NORMAL
+        else:
+            ins_signal = "None"
 
             
     # Function to get the selected sample rate value
@@ -2798,59 +2910,11 @@ def UI():
                 return option[1]
         return None  # If not found, return None or handle it as needed
     
-    def open_rotary_Plot():
-
-
-        axis = ins_axis.get()
-        sys_serial = ins_sys.get()
-
-        start_path = ('O:/')
-        folder_path = next((os.path.join(root, dir_name) for root, dirs, _ in os.walk(start_path) for dir_name in dirs if str(sys_serial[0:6]) in dir_name), None)
-        pdf_file_path = folder_path + '/Customer Files/Plots'
-
-        if os.path.exists(pdf_file_path):
-            try:
-                output_file = str(sys_serial + '-' + axis + "_Accuracy.pdf")
-                pdf = pdf_file_path + '/' + output_file
-                os.startfile(pdf)
-            except:
-                pass
-            try:
-                output_file = str(sys_serial + '-' + axis + "_Verification.pdf")
-                pdf = pdf_file_path + '/' + output_file
-                os.startfile(pdf)
-            except:
-                pass
-        else:
-            print(f"File '{pdf_file_path}' does not exist.")
-    
-    # Load stored data or set defaults
-    ins_axis_value = stored_data.get("axis_name", "X")
-    ins_start_value = stored_data.get("start_position", 10)
-    ins_step_value = stored_data.get("step_size", 30)
-    ins_num_step_value = stored_data.get("num_step", 1)
-    ins_signal_value = stored_data.get("signal", 'Encoder')
-    ins_probe_value = stored_data.get("probe_axis", 'None')
-    ins_sens_value = stored_data.get("scale factor (user units)", '0.0025')
-    ins_speed_value = stored_data.get("speed", 5)
-    ins_ramp_v_value = stored_data.get("ramp_rate", 1000)
-    ins_dwell_value = stored_data.get("dwell", 1)
-    ins_ipj_value = stored_data.get("jitter",'')
-    ins_settle_value = stored_data.get("settle",'')
-    ins_unit_value = stored_data.get("units", 'mm')
-    ins_err_unit_value = stored_data.get("error_units", 'mm')
-    ins_sample_value = stored_data.get("sample_rate", "1 kHz")
-    ins_sys_value = stored_data.get("system_serial_number", '"System Serial Number"')
-    ins_st_value = stored_data.get("part_number", '"Part Number"')
-    ins_opName_value = stored_data.get("operator", '"Your Initials"')
-    ins_temp_value = stored_data.get("temp", 20)
-    ins_comm_value = stored_data.get("comments", "")
-    
     # Create the UI elements and assign the stored values
     ins_lbl_test = tk.Label(master=tab3, text="Select Test Type:")
     ins_lbl_test.grid(row=tab3.tt_row, column=0, padx=5, pady=5)
 
-    ins_direction = tk.StringVar(value=0)
+    ins_direction = tk.StringVar(value=ins_direction_value)
     ins_uni_dir = tk.Radiobutton(master=tab3, text="Unidirectional", variable=ins_direction, value="uni", command=ins_test_type_def)
     ins_uni_dir.grid(row=tab3.tt_row, column=1, padx=5, pady=5)
 
@@ -3003,66 +3067,100 @@ def UI():
     ins_ent_comments = tk.Entry(master=tab3, textvariable=ins_comm, width=25)
     ins_ent_comments.grid(row=tab3.com_row, column=1, columnspan=3, padx=5, pady=5)
 
-    #btn_import_rot = tk.Button(master=tab1, text="Import Data", width=30, height=1, command=import_data_rotary)
-    #btn_import_rot.grid(row=tab1.run_row, column=1, padx=5, pady=5)
-
-    ins_lbl_import_rot = tk.Label(master=tab3, text='', anchor='w')
-    ins_lbl_import_rot.grid(row=tab3.run_row, column=1, padx=5, pady=5, columnspan=3)
+    btn_import_rot = tk.Button(master=tab3, text="Import Data", width=30, height=1, command=import_ins_data)
+    btn_import_rot.grid(row=tab3.run_row, column=1, padx=5, pady=5)
 
     ins_btn_run_rot = tk.Button(master=tab3, text="Run", width=25, height=1, command=start_incrementalsteptest)
     ins_btn_run_rot.grid(row=tab3.run_row, column=0, padx=5, pady=5)
-
-    ins_btn_open_rot = tk.Button(master=tab3, text="Open Plot", width=25, height=1, command=open_rotary_Plot)
-    ins_btn_open_rot.grid(row=tab3.run_row, column=2, padx=5, pady=5)
-
-    frame2 = tk.Frame(master=tab3)
-
-    txt_outStr2 = tk.Text(master=frame2, state=tk.DISABLED, height=10, fg='white', bg='black')
-    outStr_scroll2 = tk.Scrollbar(master=frame2, orient=tk.VERTICAL)
-
-    txt_outStr2.configure(yscrollcommand=outStr_scroll2.set)
-    outStr_scroll2.config(command=txt_outStr2.yview)
-
-    txt_outStr2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    outStr_scroll2.pack(side=tk.LEFT, fill=tk.Y)
-
-    frame2.grid(row=tab3.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
-
-    logger3 = TextLogger(txt_outStr2)
     
-    tab3.grid_rowconfigure(tab3.out_row, weight=1)
-    tab3.grid_columnconfigure(0, weight=1)
+    def on_closing():
+        global window_open
+        window_open = False  # Set the flag to indicate that the window is closing
+        # Determine which tab is currently active
+        current_tab = interface.index(interface.select())  # Replace 'notebook' with your Notebook widget name
+        
+        try:
+            # Save user inputs based on the active tab
+            if current_tab == 0:  # First tab
+                user_data = {
+                    "ms_test_type": ms_direction.get(),
+                    "ms_axis_name": ms_axis.get(),
+                    "ms_start_position": ms_start.get(),
+                    "ms_end_position": ms_end.get(),
+                    "ms_step_size": ms_step.get(),
+                    "ms_iterations": ms_iter.get(),
+                    "ms_speed": ms_speed.get(),
+                    "ms_ramp_rate": ms_ramp_v.get(),
+                    "ms_dwell": ms_dwell.get(),
+                    "ms_units": ms_unit.get(),
+                    "ms_error_units": ms_err_unit.get(),
+                    "ms_sample_rate": ms_sample.get(),
+                    "ms_system_serial_number": ms_sys.get(),
+                    "ms_part_number": ms_st.get(),
+                    "ms_operator": ms_opName.get(),
+                    "ms_temp": ms_temp.get(),
+                    "ms_comments": ms_comm.get()
+                }
+            elif current_tab == 1:  # Second tab
+                user_data = {
+                    "ipj_axis_name": ipj_axis.get(),
+                    "ipj_signal": ipj_signal_var.get(),
+                    "ipj_probe_axis": ipj_probe.get(),
+                    "ipj_scale factor (user units)": ipj_sens.get(),
+                    "ipj_units": ipj_unit.get(),
+                    "ipj_error_units": ipj_err_unit.get(),
+                    "ipj_sample_rate": ipj_samp.get(),
+                    "ipj_duration": ipj_dwell.get(),
+                    "ipj_system_serial_number": ipj_sys.get(),
+                    "ipj_part_number": ipj_st.get(),
+                    "ipj_operator": ipj_opName.get(),
+                    "ipj_temp": ipj_temp.get(),
+                    "ipj_comments": ipj_comm.get(),
+                    "ipj_direction": ipj_direction_var.get()
+                }
+            elif current_tab == 2:  # Third tab
+                user_data = {
+                    "ins_test_type": ins_direction.get(),
+                    "ins_axis_name": ins_axis.get(),
+                    "ins_start_position": ins_start.get(),
+                    "ins_step_size": ins_step.get(),
+                    "ins_num_step": ins_num_step.get(),
+                    "ins_signal": ins_signal_var.get(),
+                    "ins_probe_axis": ins_probe.get(),
+                    "ins_scale factor (user units)": ins_sens.get(),
+                    "ins_speed": ins_speed_.get(),
+                    "ins_ramp_rate": ins_ramp_v.get(),
+                    "ins_dwell": ins_dwell.get(),
+                    "ins_jitter": ins_ipj.get(),
+                    "ins_settle": ins_settle.get(),
+                    "ins_units": ins_unit.get(),
+                    "ins_error_units": ins_err_unit.get(),
+                    "ins_sample_rate": ins_samp.get(),
+                    "ins_system_serial_number": ins_sys.get(),
+                    "ins_part_number": ins_st.get(),
+                    "ins_operator": ins_opName.get(),
+                    "ins_temp": ins_temp.get(),
+                    "ins_comments": ins_comm.get()
+                }
+            else:
+                # Default action if no tab is selected (should not happen)
+                user_data = {}
+            
+            save_user_inputs(user_data)  # Save the data to a file
+        except Exception as e:
+            print(f"An error occurred: {e}")  # Handle any exceptions
+        try:
+            # Perform any cleanup tasks here
+            window.destroy()  # Close the main window
+            window_open = False
+        except RuntimeError:
+            return
     
-    def ins_on_closing():
-        # Save user inputs before closing
-        user_data = {
-            "axis_name": ins_axis.get(),
-            "start_position": ins_start.get(),
-            "step_size": ins_step.get(),
-            "num_step": ins_num_step.get(),
-            "signal": ins_signal_var.get(),
-            "probe_axis": ins_probe.get(),
-            "scale factor (user units)": ins_sens.get(),
-            "speed": ins_speed_.get(),
-            "ramp_rate": ins_ramp_v.get(),
-            "dwell": ins_dwell.get(),
-            "jitter": ins_ipj.get(),
-            "settle": ins_settle.get(),
-            "units": ins_unit.get(),
-            "error_units": ins_err_unit.get(),
-            "sample_rate": ins_samp.get(),
-            "system_serial_number": ins_sys.get(),
-            "part_number": ins_st.get(),
-            "operator": ins_opName.get(),
-            "temp": ins_temp.get(),
-            "comments": ins_comm.get()
-        }
-        save_user_inputs(user_data)
-        window.destroy()
-    
-    window.protocol("WM_DELETE_WINDOW", ins_on_closing)
+    # Bind the closing protocol
+    window.protocol("WM_DELETE_WINDOW", on_closing)
+
     
     window.mainloop()
-
+    
 if __name__ == "__main__":
     UI()

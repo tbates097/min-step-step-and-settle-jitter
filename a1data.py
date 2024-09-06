@@ -10,13 +10,16 @@ Edited last on 6/21/2022 at 8:00 am
 """
 from abc import ABC, abstractmethod
 import csv
+import sys
+import traceback
 import enum
 import automation1 as a1
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as signal
-from scipy import signal #JMS added
+
+from Logger import TextLogger
 
 class mode(enum.Enum):
     
@@ -88,16 +91,18 @@ class a1data(ABC):
         self.ramp_type = kwargs['ramp_type']
         self.ramp_value = kwargs['ramp_value']
         self.ramp_type_arg = kwargs['ramp_type_arg']
-        
-        
-    # def get_units(self):
-    #     return self._units
+        self.import_data = kwargs['import_data']
+        self.text_widget = kwargs['text_widget']
     
-    # def set_units(self,controller:a1.Controller, units):
-    #     controller.runtime.parameters._set_active_parameter(a1.SystemParameterId.UnitsName,units)
+    def setup_error_logging(self):
+        # Redirect sys.stderr to the text widget
+        sys.stderr = TextLogger(self.text_widget)
 
-    
-        
+    def log_exception(self, exc_type, exc_value, exc_traceback):
+        """Custom exception handler to log exceptions to the Text widget."""
+        error_message = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        print(error_message)  # This will be redirected to the Text widget
+
     #Basic Data Set up to be used for every proper B5.64 test, Function needs to generate arrays for time/position/analog data
     @abstractmethod
     def test(self, controller : a1.Controller):
@@ -203,9 +208,10 @@ class a1data(ABC):
         return dat
     
     def populate(self, results = None, file = None, dataframe = None):
+        if self.import_data == True:
+            results = None
         if results is not None:
             #self.time_array = np.linspace(0, self.step_time, self.n, endpoint = False)
-            
             self.time_array = np.array(results.system.get(a1.SystemDataSignal.DataCollectionSampleTime).points)
             self.time_array -= self.time_array[0]
             self.time_array *= .001 #msec to sec
@@ -229,33 +235,20 @@ class a1data(ABC):
                 self.vel_err = results.axis.get(a1.AxisDataSignal.VelocityError, self.axis).points
                 self.ai0 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis).points
             ##########TB
-            if self.units == 'mm':
-                if self.error_units == 'nm':
-                        self.pos_com = [e * 1000000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000000 for e in self.ai0]
-                elif self.error_units == 'um':
-                        self.pos_com = [e * 1000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000 for e in self.ai0]
-                elif self.error_units == 'arcsec':
-                        self.pos_com = [e * 3600 for e in self.pos_com]
-                        self.pos_fbk = [e * 3600 for e in self.pos_fbk]
-                        self.ai0 = [e * 3600 for e in self.ai0]
-            if self.units == 'um':
-                if self.error_units == 'nm':
-                        self.pos_com = [e * 1000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000 for e in self.ai0]
-                elif self.error_units == 'um':
-                        self.pos_com = [e * 1 for e in self.pos_com]
-                        self.pos_fbk = [e * 1 for e in self.pos_fbk]
-                        self.ai0 = [e * 1 for e in self.ai0]
-            if self.units == 'deg':
-                if self.error_units == 'arcsec':
-                        self.pos_com = [e * 3600 for e in self.pos_com]
-                        self.pos_fbk = [e * 3600 for e in self.pos_fbk]
-                        self.ai0 = [e * 3600 for e in self.ai0]
+            conversion_factors = {
+                ('mm', 'nm'): 1000000,
+                ('mm', 'um'): 1000,
+                ('um', 'nm'): 1000,
+                ('um', 'um'): 1,
+                ('deg', 'arcsec'): 3600,
+            }
+            
+            conversion_factor = conversion_factors.get((self.units, self.error_units))
+            
+            if conversion_factor:
+                self.pos_com = [e * conversion_factor for e in self.pos_com]
+                self.pos_fbk = [e * conversion_factor for e in self.pos_fbk]
+                self.ai0 = [e * conversion_factor for e in self.ai0]
                     
         #populates object from a data file
         elif file is not None:
@@ -263,18 +256,18 @@ class a1data(ABC):
             if self.probe_axis == 'None':
                 try:
                     self.time_array = data['Time (seconds)'].tolist()
-                    self.pos_com = (data[' PosCmd ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.pos_fbk = (data[' PosFbk ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.pos_err = (data[' PosErr ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_com = (data['PosCmd ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_fbk = (data['PosFbk ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_err = (data['PosErr ({}) {}'.format(self.axis, self.units)]).tolist()
                 except KeyError:
                     self.time_array = data['Time (sec)'].tolist()
                     self.pos_com = (data[' PosCmd ({}) ({})'.format(self.axis, self.units)]).tolist()
                     self.pos_fbk = (data[' PosFbk ({}) ({})'.format(self.axis, self.units)]).tolist()
                     self.pos_err = (data[' PosErr ({}) ({})'.format(self.axis, self.units)]).tolist()
                 try:
-                    self.vel_com = (data[' VelCmd ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.vel_fbk = (data[' VelFbk ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.vel_err = (data[' VelErr ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_com = (data['VelCmd ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_fbk = (data['VelFbk ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_err = (data['VelErr ({}) {}'.format(self.axis, self.units)]).tolist()
                 except KeyError:
                     self.vel_com = (data[' VelCmd ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
                     self.vel_fbk = (data[' VelFbk ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
@@ -282,54 +275,26 @@ class a1data(ABC):
             else:
                 try:
                     self.time_array = data['Time (seconds)'].tolist()
-                    self.pos_com = (data[' PosCmd ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.pos_fbk = (data[' PosFbk ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.pos_err = (data[' PosErr ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_com = (data['PosCmd ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_fbk = (data['PosFbk ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_err = (data['PosErr ({}) {}'.format(self.axis, self.units)]).tolist()
                 except KeyError:
                     self.time_array = data['Time (sec)'].tolist()
                     self.pos_com = (data[' PosCmd ({}) ({})'.format(self.axis, self.units)]).tolist()
                     self.pos_fbk = (data[' PosFbk ({}) ({})'.format(self.axis, self.units)]).tolist()
                     self.pos_err = (data[' PosErr ({}) ({})'.format(self.axis, self.units)]).tolist()
                 try:
-                    self.vel_com = (data[' VelCmd ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.vel_fbk = (data[' VelFbk ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.vel_err = (data[' VelErr ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_com = (data['VelCmd ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_fbk = (data['VelFbk ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_err = (data['VelErr ({}) {}'.format(self.axis, self.units)]).tolist()
                 except KeyError:
                     self.vel_com = (data[' VelCmd ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
                     self.vel_fbk = (data[' VelFbk ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
                     self.vel_err = (data[' VelErr ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
-                self.ai0 = (data[' Ain 0 ({})'.format(self.probe_axis)]).tolist()
+                self.ai0 = (data['Ain 0 ({})'.format(self.probe_axis)]).tolist()
             
             self.pos_fbk = [e - self.pos_com[0] for e in self.pos_fbk]
             self.pos_com = [e - self.pos_com[0] for e in self.pos_com]
-            
-            if self.units == 'mm':
-                if self.error_units == 'nm':
-                        self.pos_com = [e * 1000000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000000 for e in self.ai0]
-                elif self.error_units == 'um':
-                        self.pos_com = [e * 1000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000 for e in self.ai0]
-                elif self.error_units == 'arcsec':
-                        self.pos_com = [e * 3600 for e in self.pos_com]
-                        self.pos_fbk = [e * 3600 for e in self.pos_fbk]
-                        self.ai0 = [e * 3600 for e in self.ai0]
-            if self.units == 'um':
-                if self.error_units == 'nm':
-                        self.pos_com = [e * 1000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000 for e in self.ai0]
-                elif self.error_units == 'um':
-                        self.pos_com = [e * 1 for e in self.pos_com]
-                        self.pos_fbk = [e * 1 for e in self.pos_fbk]
-                        self.ai0 = [e * 1 for e in self.ai0]
-            if self.units == 'deg':
-                if self.error_units == 'arcsec':
-                        self.pos_com = [e * 3600 for e in self.pos_com]
-                        self.pos_fbk = [e * 3600 for e in self.pos_fbk]
-                        self.ai0 = [e * 3600 for e in self.ai0]
             
         #Populates from a data frame
         elif dataframe is not None:
@@ -337,18 +302,18 @@ class a1data(ABC):
             if self.probe_axis == 'None':
                 try:
                     self.time_array = data['Time (seconds)'].tolist()
-                    self.pos_com = (data[' PosCmd ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.pos_fbk = (data[' PosFbk ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.pos_err = (data[' PosErr ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_com = (data['PosCmd ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_fbk = (data['PosFbk ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.pos_err = (data['PosErr ({}) {}'.format(self.axis, self.units)]).tolist()
                 except KeyError:
                     self.time_array = data['Time (sec)'].tolist()
                     self.pos_com = (data[' PosCmd ({}) ({})'.format(self.axis, self.units)]).tolist()
                     self.pos_fbk = (data[' PosFbk ({}) ({})'.format(self.axis, self.units)]).tolist()
                     self.pos_err = (data[' PosErr ({}) ({})'.format(self.axis, self.units)]).tolist()
                 try:
-                    self.vel_com = (data[' VelCmd ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.vel_fbk = (data[' VelFbk ({}) {}'.format(self.axis, self.units)]).tolist()
-                    self.vel_err = (data[' VelErr ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_com = (data['VelCmd ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_fbk = (data['VelFbk ({}) {}'.format(self.axis, self.units)]).tolist()
+                    self.vel_err = (data['VelErr ({}) {}'.format(self.axis, self.units)]).tolist()
                 except KeyError:
                     self.vel_com = (data[' VelCmd ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
                     self.vel_fbk = (data[' VelFbk ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
@@ -372,38 +337,27 @@ class a1data(ABC):
                     self.vel_com = (data[' VelCmd ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
                     self.vel_fbk = (data[' VelFbk ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
                     self.vel_err = (data[' VelErr ({}) ({}/sec)'.format(self.axis, self.units)]).tolist()
-                self.ai0 = (data[' Ain 0 ({})'.format(self.probe_axis)]).tolist()
+                self.ai0 = (data['Ain 0 ({})'.format(self.probe_axis)]).tolist()
             
             self.pos_fbk = [e - self.pos_com[0] for e in self.pos_fbk]
             self.pos_com = [e - self.pos_com[0] for e in self.pos_com]
             
-            if self.units == 'mm':
-                if self.error_units == 'nm':
-                        self.pos_com = [e * 1000000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000000 for e in self.ai0]
-                elif self.error_units == 'um':
-                        self.pos_com = [e * 1000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000 for e in self.ai0]
-                elif self.error_units == 'arcsec':
-                        self.pos_com = [e * 3600 for e in self.pos_com]
-                        self.pos_fbk = [e * 3600 for e in self.pos_fbk]
-                        self.ai0 = [e * 3600 for e in self.ai0]
-            if self.units == 'um':
-                if self.error_units == 'nm':
-                        self.pos_com = [e * 1000 for e in self.pos_com]
-                        self.pos_fbk = [e * 1000 for e in self.pos_fbk]
-                        self.ai0 = [e * 1000 for e in self.ai0]
-                elif self.error_units == 'um':
-                        self.pos_com = [e * 1 for e in self.pos_com]
-                        self.pos_fbk = [e * 1 for e in self.pos_fbk]
-                        self.ai0 = [e * 1 for e in self.ai0]
-            if self.units == 'deg':
-                if self.error_units == 'arcsec':
-                        self.pos_com = [e * 3600 for e in self.pos_com]
-                        self.pos_fbk = [e * 3600 for e in self.pos_fbk]
-                        self.ai0 = [e * 3600 for e in self.ai0]
+
+            conversion_factors = {
+                ('mm', 'nm'): 1000000,
+                ('mm', 'um'): 1000,
+                ('um', 'nm'): 1000,
+                ('um', 'um'): 1,
+                ('deg', 'arcsec'): 3600,
+            }
+            
+            conversion_factor = conversion_factors.get((self.units, self.error_units))
+            
+            if conversion_factor:
+                self.pos_com = [e * conversion_factor for e in self.pos_com]
+                self.pos_fbk = [e * conversion_factor for e in self.pos_fbk]
+                self.ai0 = [e * conversion_factor for e in self.ai0]
+
 
     def plot(self, *args : mode):
         #plot anything vs time

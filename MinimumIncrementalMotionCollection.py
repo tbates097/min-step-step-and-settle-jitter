@@ -13,13 +13,13 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 import sys
+import traceback
 import math
 import copy
 from datetime import datetime
 from typing import Union
 from operator import itemgetter
 from itertools import groupby
-import pdb
 import csv
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -29,6 +29,7 @@ import tempfile
 sys.path.append('../')
 
 import a1data
+from Logger import TextLogger
 
 
 class incremental_step(a1data.a1data):
@@ -152,7 +153,17 @@ class incremental_step(a1data.a1data):
         self.error_units = kwargs['error_units']
         self.t_ave = kwargs['t_ave']
         self.start_pos = kwargs['start_pos']
-        
+        self.text_widget = kwargs['text_widget']
+    
+    def setup_error_logging(self):
+        # Redirect sys.stderr to the text widget
+        sys.stderr = TextLogger(self.text_widget)
+
+    def log_exception(self, exc_type, exc_value, exc_traceback):
+        """Custom exception handler to log exceptions to the Text widget."""
+        error_message = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        print(error_message)  # This will be redirected to the Text widget
+          
     def test(self, controller : a1.Controller):
         
         
@@ -183,7 +194,6 @@ class incremental_step(a1data.a1data):
         #Make sure step size and decrement are possible by encoder
         #cpu = controller.runtime.parameters.axes.__getitem__(self.axis).units.countsperunit.value 
         #self.step_size = ((int)(self.step_size*cpu))/cpu
-        print(self.step_size)
         
         #Move such that the start point can be approached from the positive direction
         controller.runtime.commands.motion.movelinear(self.axis, [self.start_pos - self.step_size], self.speed) 
@@ -489,7 +499,6 @@ class incremental_step(a1data.a1data):
         # Update kwargs with any provided options
         kwargs = {**default_kwargs, **kwargs}
         step_num = kwargs['step_num']
-        fignum = kwargs['fignum']
         legend_loc = kwargs['legend_loc']
         legend_size = kwargs['legend_size']
         fig_size = kwargs['fig_size']
@@ -617,7 +626,7 @@ class incremental_step(a1data.a1data):
         # Return the figure if it was created; otherwise, return the axis
         return fig if fig else ax
     
-    def plot_to_plotly(self, output_dir=None, **kwargs):
+    def plot_to_plotly(self, new_folder_path, output_dir=None, **kwargs):
         """
         Generate a Plotly plot based on the provided data and display it in an HTML window.
         
@@ -642,7 +651,6 @@ class incremental_step(a1data.a1data):
         # Update kwargs with any provided options
         kwargs = {**default_kwargs, **kwargs}
         step_num = kwargs['step_num']
-        legend_loc = kwargs['legend_loc']
         legend_size = kwargs['legend_size']
     
         # Determine step label for the title
@@ -672,23 +680,6 @@ class incremental_step(a1data.a1data):
             time = self.time_array[t_ms_range[0] - graph_offset: t_ave_range[1] + int(graph_offset / 15)]
             ai0 = self.ai0[t_ms_range[0] - graph_offset: t_ave_range[1] + int(graph_offset / 15)]
             y_range = ai0  # Use this range for y-axis calculations
-    
-        # Calculate heights for annotation positions
-        first_height = np.average(y_range[:graph_offset]) 
-        second_height = y_range[t_ave_range[0] - (t_ms_range[0] - graph_offset)]
-    
-        # Determine placement of annotations based on heights
-        if abs(first_height) < abs(second_height):
-            lower_height = first_height
-            upper_height = second_height 
-            divisor = 4
-        else:
-            lower_height = second_height
-            upper_height = first_height
-            divisor = 1.5
-    
-        # Midpoint y-coordinate for the move and settle time annotation 
-        ms_time_y_coords = (lower_height + (upper_height - lower_height) / divisor)
     
         # Plotly figure
         fig = go.Figure()
@@ -791,13 +782,18 @@ class incremental_step(a1data.a1data):
             legend=dict(font=dict(size=legend_size)),
             margin=dict(l=40, r=40, t=40, b=40)
         )
+        
     
-        # Save to an HTML file
+        # Save to a temporary HTML file for display
         if output_dir is None:
             output_dir = tempfile.gettempdir()
         output_path = os.path.join(output_dir, "plot.html")
         pio.write_html(fig, file=output_path, auto_open=True)
     
+        # Save to an HTML file in the specified folder
+        html_file = os.path.join(new_folder_path, 'Aerotech_Min_Step_Plot.html')
+        pio.write_html(fig, file=html_file, auto_open=False)  # auto_open=False to avoid opening again
+        
     def write_to_csv(self, filename: str, sys_serial: str, axis: str):
         '''
         Creates a .csv file and writes the data to it
@@ -811,6 +807,7 @@ class incremental_step(a1data.a1data):
         -------
         None
         '''
+        
         # Determine the correct header based on probe_axis
         if self.probe_axis == 'None':
             header = ['Time (seconds)', 
@@ -1169,7 +1166,6 @@ class step_reversal(incremental_step):
                 if (e >= 0) & (e < self.t_ave):
                     sr_start.append(e)
             avg_sr_start = np.average(sr_start)
-            print(avg_sr_start)
             
             #Shifts the entire step window to be centered about zero
             if avg_sr_start > 0:

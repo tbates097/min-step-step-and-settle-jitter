@@ -13,6 +13,7 @@ import sys
 import os
 from datetime import datetime
 import csv
+import traceback
 sys.path.append('../')
 import a1data
 import time as timemodule
@@ -20,6 +21,8 @@ import numpy as np
 import scipy.signal as signal
 import scipy.integrate as integrate
 from scipy.optimize import curve_fit
+
+from Logger import TextLogger
 
 class jitter(a1data.a1data):
     '''
@@ -81,7 +84,18 @@ class jitter(a1data.a1data):
 
         self.error_units = kwargs['error_units']
         self.units = kwargs['units']
-        
+        self.import_data = kwargs['import_data']
+        self.text_widget = kwargs['text_widget']
+    
+    def setup_error_logging(self):
+        # Redirect sys.stderr to the text widget
+        sys.stderr = TextLogger(self.text_widget)
+
+    def log_exception(self, exc_type, exc_value, exc_traceback):
+        """Custom exception handler to log exceptions to the Text widget."""
+        error_message = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        print(error_message)  # This will be redirected to the Text widget       
+    
     def test(self, controller : a1.Controller):
         '''
         Method to perform the corresponding Automation 1 test in compliance with ASME B5.64
@@ -135,29 +149,16 @@ class jitter(a1data.a1data):
 
         
         #Data configurations. These are how to configure data collection parameters
-        if self.probe_axis == 'None':
-            data_config = a1.DataCollectionConfiguration(self.n, self.__freq)  #Freq should be 20x the max frequency required by end process
-            data_config.system.add(a1.SystemDataSignal.DataCollectionSampleTime)
-            data_config.axis.add(a1.AxisDataSignal.PositionCommand, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.PositionFeedback, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.PositionError, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.VelocityCommand, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.VelocityFeedback, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.VelocityError, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.axis)
-        ###########TB
-        else:
-            data_config = a1.DataCollectionConfiguration(self.n, self.__freq)  #Freq should be 20x the max frequency required by end process
-            data_config.system.add(a1.SystemDataSignal.DataCollectionSampleTime)
-            data_config.axis.add(a1.AxisDataSignal.PositionCommand, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.PositionFeedback, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.PositionError, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.VelocityCommand, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.VelocityFeedback, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.VelocityError, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis)
-        ###########TB
         
+        data_config = a1.DataCollectionConfiguration(self.n, self.__freq)  #Freq should be 20x the max frequency required by end process
+        data_config.system.add(a1.SystemDataSignal.DataCollectionSampleTime)
+        data_config.axis.add(a1.AxisDataSignal.PositionCommand, self.axis)
+        data_config.axis.add(a1.AxisDataSignal.PositionFeedback, self.axis)
+        data_config.axis.add(a1.AxisDataSignal.PositionError, self.axis)
+        data_config.axis.add(a1.AxisDataSignal.VelocityCommand, self.axis)
+        data_config.axis.add(a1.AxisDataSignal.VelocityFeedback, self.axis)
+        data_config.axis.add(a1.AxisDataSignal.VelocityError, self.axis)
+        data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.axis)
         
         # #Homing instructions if Cap Probe is used as to not break the cap probe
         # #Move stage until it is in the 0 position of the cap probe
