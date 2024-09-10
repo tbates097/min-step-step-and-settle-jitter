@@ -22,6 +22,8 @@ import traceback
 import plotly.graph_objs as go
 import plotly.io as pio
 import webbrowser
+import matplotlib
+matplotlib.use('Agg')  # Ensure the Tkinter backend is used
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import threading
@@ -41,6 +43,15 @@ from InPositionJitterCollection import jitter
 from MinimumIncrementalMotionCollection import incremental_step
 import a1data
 from AerotechFormat import AerotechFormat
+
+# Clean up malformed and unnecessary paths
+syst.path = [p for p in syst.path if p not in ['', '../', 'C:\\Users\\tbates"', 'C:\\Users\\tbates\\Python\\min-step-step-and-settle-jitter']]
+
+print("Python executable:", syst.executable)
+print("Python version:", syst.version)
+print("Python path:", syst.path)
+print("matplotlib backend:", matplotlib.get_backend())
+print("Environment PATH:", os.environ['PATH'])
 
 # Global State Class
 class GlobalState:
@@ -252,7 +263,6 @@ def UI():
     ttk.Separator(master=tab1, orient='vertical').grid(row=tab1.h1_row, column=4, rowspan=21, sticky='nsw', pady=(4, 0))
     
     # Load stored data or set defaults
-    ms_direction_value = stored_data.get("ms_test_type",'uni')
     ms_axis_value = stored_data.get("ms_axis_name", "X")
     ms_start_value = stored_data.get("ms_start_position", 10)
     ms_end_value = stored_data.get("ms_end_position", 30)
@@ -286,7 +296,6 @@ def UI():
     ipj_direction_value = stored_data.get("ipj_direction", 'pos')
     
     # Load stored data or set defaults
-    ins_direction_value = stored_data.get("ins_test_type",'uni')
     ins_axis_value = stored_data.get("ins_axis_name", "X")
     ins_start_value = stored_data.get("ins_start_position", 0)
     ins_step_value = stored_data.get("ins_step_size", 0.00005)
@@ -362,7 +371,6 @@ def UI():
 
         # Save user inputs before closing
         user_data = {
-            "ms_test_type": ms_direction.get(),
             "ms_axis_name": ms_axis.get(),
             "ms_start_position": ms_start.get(),
             "ms_end_position": ms_end.get(),
@@ -388,14 +396,13 @@ def UI():
         finally:
             gc.collect()  
             try:
-                # Only try to interact with Tkinter if the window is still open
+                # Schedule a callback on the main thread to interact with Tkinter
                 if window_open:
-                    # Schedule a callback to change the button state if the window is still valid
-                    window.after(0, lambda: ipj_btn_run_rot.config(state=tk.NORMAL))
+                    window.after(0, lambda: ms_btn_run_rot.config(state=tk.NORMAL))
                 else:
                     return
             except RuntimeError:
-                return        
+                return
     
     def moveandsettletest():
         def prompt_user(message):
@@ -805,7 +812,7 @@ def UI():
         
         def embed_plot_in_canvas(plot, canvas_frame):
         
-            plot.set_size_inches(20, 10)
+            plot.set_size_inches(14, 7)
             
             # Embed the plot in the Tkinter canvas
             canvas = FigureCanvasTkAgg(plot, master=canvas_frame)
@@ -1037,7 +1044,7 @@ def UI():
     ms_lbl_test = tk.Label(master=tab1, text="Select Test Type:")
     ms_lbl_test.grid(row=tab1.tt_row, column=0, padx=5, pady=5)
 
-    ms_direction = tk.StringVar(value=ms_direction_value)
+    ms_direction = tk.StringVar(value=0)
     ms_uni_dir = tk.Radiobutton(master=tab1, text="Unidirectional", variable=ms_direction, value="uni", command=ms_test_type_def)
     ms_uni_dir.grid(row=tab1.tt_row, column=1, padx=5, pady=5)
 
@@ -1280,9 +1287,8 @@ def UI():
         finally:
             gc.collect()
             try:
-                # Only try to interact with Tkinter if the window is still open
+                # Schedule a callback on the main thread to interact with Tkinter
                 if window_open:
-                    # Schedule a callback to change the button state if the window is still valid
                     window.after(0, lambda: ipj_btn_run_rot.config(state=tk.NORMAL))
                 else:
                     return
@@ -2104,6 +2110,7 @@ def UI():
 
     def run_incrementalsteptest():
         global window_open
+    
         # Save user inputs before closing
         user_data = {
             "ins_axis_name": ins_axis.get(),
@@ -2128,17 +2135,16 @@ def UI():
             "ins_comments": ins_comm.get()
         }
         save_user_inputs(user_data)
+    
         try:
             incrementalsteptest()
             ins_data_filtering()
             ins_process_data()
-
         finally:
-            gc.collect()  
+            gc.collect()
             try:
-                # Only try to interact with Tkinter if the window is still open
+                # Schedule a callback on the main thread to interact with Tkinter
                 if window_open:
-                    # Schedule a callback to change the button state if the window is still valid
                     window.after(0, lambda: ins_btn_run_rot.config(state=tk.NORMAL))
                 else:
                     return
@@ -2914,7 +2920,7 @@ def UI():
     ins_lbl_test = tk.Label(master=tab3, text="Select Test Type:")
     ins_lbl_test.grid(row=tab3.tt_row, column=0, padx=5, pady=5)
 
-    ins_direction = tk.StringVar(value=ins_direction_value)
+    ins_direction = tk.StringVar(value=0)
     ins_uni_dir = tk.Radiobutton(master=tab3, text="Unidirectional", variable=ins_direction, value="uni", command=ins_test_type_def)
     ins_uni_dir.grid(row=tab3.tt_row, column=1, padx=5, pady=5)
 
@@ -3083,7 +3089,6 @@ def UI():
             # Save user inputs based on the active tab
             if current_tab == 0:  # First tab
                 user_data = {
-                    "ms_test_type": ms_direction.get(),
                     "ms_axis_name": ms_axis.get(),
                     "ms_start_position": ms_start.get(),
                     "ms_end_position": ms_end.get(),
@@ -3120,7 +3125,6 @@ def UI():
                 }
             elif current_tab == 2:  # Third tab
                 user_data = {
-                    "ins_test_type": ins_direction.get(),
                     "ins_axis_name": ins_axis.get(),
                     "ins_start_position": ins_start.get(),
                     "ins_step_size": ins_step.get(),
