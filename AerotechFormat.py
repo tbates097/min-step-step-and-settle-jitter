@@ -6,6 +6,7 @@ Created on Thu May 26 15:08:17 2022
 """
 import matplotlib.pyplot as plt
 import matplotlib.image as image
+import os
 
 class AerotechFormat():
     
@@ -22,7 +23,12 @@ class AerotechFormat():
         fig.set_size_inches(11, 8.5)  # Full page size
         
         # Aerotech Logo Header
-        logo = image.imread(r'AERO_LogoNoTagline-RGB.png', format='png')
+        # Get the current working directory
+        current_dir = os.getcwd()
+        
+        # Construct the absolute path to the file
+        logo_path = os.path.join(current_dir, 'AERO_LogoNoTagline-RGB.png')
+        logo = image.imread(logo_path, format='png')
         ax0 = plt.subplot2grid((7, 3), (0, 0), rowspan=1, colspan=3)
         ax0.imshow(logo)
         ax0.axis('off')
