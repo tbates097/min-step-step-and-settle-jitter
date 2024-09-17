@@ -365,7 +365,6 @@ class a1data(ABC):
             d = self.choose_array(arg)
             plt.plot(self.time_array, d)
         plt.xlabel('Time (seconds)')
-        
 
     def write_to_csv(self, filename : str):
         '''

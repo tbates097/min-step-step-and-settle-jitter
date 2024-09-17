@@ -34,6 +34,7 @@ import socket
 import copy
 import gc
 import json
+import ctypes
 
 # Assuming these are custom imports
 import automation1 as a1
@@ -46,12 +47,6 @@ from AerotechFormat import AerotechFormat
 
 # Clean up malformed and unnecessary paths
 syst.path = [p for p in syst.path if p not in ['', '../', 'C:\\Users\\tbates"', 'C:\\Users\\tbates\\Python\\min-step-step-and-settle-jitter']]
-
-print("Python executable:", syst.executable)
-print("Python version:", syst.version)
-print("Python path:", syst.path)
-print("matplotlib backend:", matplotlib.get_backend())
-print("Environment PATH:", os.environ['PATH'])
 
 # Global State Class
 class GlobalState:
@@ -175,15 +170,27 @@ def UI():
     window.title("Min Step - Jitter - Step and Settle")
     window.resizable(True, False)
     
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-
-    window_height = 900
+    # Get screen width and height, including taskbar
+    screen_width = ctypes.windll.user32.GetSystemMetrics(0)  # Full screen width
+    screen_height = ctypes.windll.user32.GetSystemMetrics(1)  # Full screen height
+    
+    # Get the usable work area size (excluding taskbar)
+    usable_width = ctypes.windll.user32.GetSystemMetrics(78)  # Width excluding taskbar
+    usable_height = ctypes.windll.user32.GetSystemMetrics(79)  # Height excluding taskbar
+    
+    # Set desired window size
+    window_height = 1000
     window_width = 1900
-
-    x_cordinate = int((screen_width / 2) - (window_width / 2))
-    y_cordinate = int((screen_height / 2) - (window_height / 2))
-
+    
+    # Ensure the window size does not exceed usable screen dimensions
+    window_width = min(window_width, usable_width)
+    window_height = min(window_height, usable_height)
+    
+    # Center the window on the screen
+    x_cordinate = 0
+    y_cordinate = 0
+    
+    # Set window size and position
     window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
     
     # Create a style object
@@ -217,50 +224,77 @@ def UI():
     interface.add(tab1, text='Step and Settle')
     interface.add(tab2, text='In-Position Jitter')
     interface.add(tab3, text='Min Incremental Motion')
+    
+    tab1.grid_rowconfigure(0, weight=1)
+    tab1.grid_rowconfigure(1, weight=1)
+    tab1.grid_columnconfigure(0, weight=1)
+    tab1.grid_columnconfigure(1, weight=1)
 
-    #for tab in (tab1, tab2, tab3):
+    '''
+    # MAIN USER INPUT FRAME
+    '''
+    
+    input_frame_width = 400
+    input_frame_height = 800
+    
+    input_frame_tab1 = tk.Frame(master=tab1, width=input_frame_width, height=input_frame_height)
+    input_frame_tab1.grid(row=0, column=0, sticky='nsew')
+    input_frame_tab1.grid_propagate(False)
+    
     # Configure columns and rows
-    tab1.columnconfigure([0, 1, 2, 3, 4, 5, 6], weight=1, minsize=700 / 4, uniform='column')
-    tab1.rowconfigure([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], weight=1, minsize=1)
+    input_frame_tab1.columnconfigure([0, 1, 2, 3], weight=1, uniform='column')
+    input_frame_tab1.rowconfigure(list(range(20)), weight=1)
 
     # Define row indices
-    tab1.h0_row = 0
-    tab1.h1_row = 1
-    tab1.tt_row = 2
-    tab1.h2_row = 3
-    tab1.axis_row = 4
-    tab1.start_row = 5
-    tab1.end_row = 6
-    tab1.step_row = 7
-    tab1.iter_row = 8
-    tab1.speed_row = 9
-    tab1.ramp_v_row = 10
-    tab1.dwell_row = 11
-    tab1.h3_row = 12
-    tab1.sys_row = 13
-    tab1.st_row = 14
-    tab1.op_row = 15
-    tab1.temp_row = 16
-    tab1.com_row = 17
-    tab1.folder_row = 18
-    tab1.h4_row = 19
-    tab1.run_row = 20
-    tab1.out_row = 21
-
-    window.rowconfigure(tab1.out_row, minsize=4)
+    input_frame_tab1.h0_row = 0
+    input_frame_tab1.h1_row = 1
+    input_frame_tab1.tt_row = 2
+    input_frame_tab1.h2_row = 3
+    input_frame_tab1.axis_row = 4
+    input_frame_tab1.start_row = 5
+    input_frame_tab1.end_row = 6
+    input_frame_tab1.step_row = 7
+    input_frame_tab1.iter_row = 8
+    input_frame_tab1.speed_row = 9
+    input_frame_tab1.ramp_v_row = 10
+    input_frame_tab1.dwell_row = 11
+    input_frame_tab1.h3_row = 12
+    input_frame_tab1.sys_row = 13
+    input_frame_tab1.st_row = 14
+    input_frame_tab1.op_row = 15
+    input_frame_tab1.temp_row = 16
+    input_frame_tab1.com_row = 17
+    input_frame_tab1.folder_row = 18
+    input_frame_tab1.h4_row = 19
+    input_frame_tab1.run_row = 20
 
     # Create horizontal separators
-    ttk.Separator(master=tab1, orient='horizontal').grid(row=tab1.h1_row, column=0, columnspan=4, sticky='ew')
-    ttk.Separator(master=tab1, orient='horizontal').grid(row=tab1.h2_row, column=0, columnspan=4, sticky='ew')
-    ttk.Separator(master=tab1, orient='horizontal').grid(row=tab1.h3_row, column=0, columnspan=4, sticky='ew')
-    ttk.Separator(master=tab1, orient='horizontal').grid(row=tab1.h4_row, column=0, columnspan=4, sticky='ew')
-
-    # Adjust column weights so the vertical separator aligns correctly
-    tab1.columnconfigure(3, weight=1)
-    tab1.columnconfigure(4, weight=1)
-    
+    ttk.Separator(master=input_frame_tab1, orient='horizontal').grid(
+        row=input_frame_tab1.h1_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
+    ttk.Separator(master=input_frame_tab1, orient='horizontal').grid(
+        row=input_frame_tab1.h2_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
+    ttk.Separator(master=input_frame_tab1, orient='horizontal').grid(
+        row=input_frame_tab1.h3_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
     # Add the vertical separator to the frame
-    ttk.Separator(master=tab1, orient='vertical').grid(row=tab1.h1_row, column=4, rowspan=21, sticky='nsw', pady=(4, 0))
+    ttk.Separator(master=input_frame_tab1, orient='vertical').grid(
+        row=input_frame_tab1.h1_row,
+        column=4,
+        rowspan=21,
+        sticky='nsw',
+        pady=(5, 0)
+    )
     
     # Load stored data or set defaults
     ms_axis_value = stored_data.get("ms_axis_name", "X")
@@ -317,23 +351,34 @@ def UI():
     ins_temp_value = stored_data.get("ins_temp", 20)
     ins_comm_value = stored_data.get("ins_comments", "")
     
-    frame = tk.Frame(master=tab1)
-
-    txt_outStr = tk.Text(master=frame, state=tk.DISABLED, height=10, fg='white', bg='black')
-    outStr_scroll = tk.Scrollbar(master=frame, orient=tk.VERTICAL)
-
+    '''
+    # TEXT WIDGET FRAME
+    '''
+    
+    # Create the frame without fixed width and height
+    text_frame_tab1 = tk.Frame(master=tab1)
+    text_frame_tab1.grid(row=1, column=0, sticky='nsew', padx=5, pady=5)
+    text_frame_tab1.grid_propagate(True)  # Allow frame to resize based on content
+    
+    # Configure the grid in text_frame_tab3
+    text_frame_tab1.grid_rowconfigure(0, weight=1)  # Allow row 0 to expand
+    text_frame_tab1.grid_columnconfigure(0, weight=1)  # Allow column 0 (Text widget) to expand
+    text_frame_tab1.grid_columnconfigure(1, weight=0)  # Keep column 1 (Scrollbar) at a fixed size
+    
+    # Create the text widget and scrollbar
+    txt_outStr = tk.Text(master=text_frame_tab1, state=tk.DISABLED, fg='white', bg='black')
+    outStr_scroll = tk.Scrollbar(master=text_frame_tab1, orient=tk.VERTICAL)
+    
+    # Configure the scrollbar
     txt_outStr.configure(yscrollcommand=outStr_scroll.set)
     outStr_scroll.config(command=txt_outStr.yview)
-
-    txt_outStr.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    outStr_scroll.pack(side=tk.LEFT, fill=tk.Y)
-
-    frame.grid(row=tab1.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
-
-    text_logger = TextLogger(txt_outStr)
     
-    tab1.grid_rowconfigure(tab1.out_row, weight=1)
-    tab1.grid_columnconfigure(0, weight=1)
+    # Place the widgets using grid
+    txt_outStr.grid(row=0, column=0, sticky='nsew')
+    outStr_scroll.grid(row=0, column=1, sticky='ns')
+    
+    # Initialize the text logger
+    text_logger = TextLogger(txt_outStr)
     
     def get_latest_timestamped_folder(base_folder):
         # Regular expression pattern to match your folder naming format
@@ -713,6 +758,20 @@ def UI():
         
         print(f'All contents moved to {new_folder_path}')    
     
+    # PLOT FRAMES
+    plot_frame_width = 600
+    plot_frame_height = 1000
+
+    # Remove width and height, and grid_propagate(False)
+    plot_frame_tab1 = tk.Frame(master=tab1, width=plot_frame_width, height=plot_frame_height)
+    plot_frame_tab1.grid(row=0, column=1, rowspan=2, sticky='nsew')
+    plot_frame_tab1.grid_propagate(False)
+    
+    # Configure the frames to expand
+    plot_frame_tab1.grid_rowconfigure(0, weight=1)
+    plot_frame_tab1.grid_rowconfigure(1, weight=1)
+    plot_frame_tab1.grid_columnconfigure(0, weight=1)
+    
     def ms_process_data(folder, import_data):
         global desired_time,pos_tolerance,avg
         
@@ -812,12 +871,12 @@ def UI():
         
         def embed_plot_in_canvas(plot, canvas_frame):
         
-            plot.set_size_inches(14, 7)
+            plot.set_size_inches(6, 2)
             
             # Embed the plot in the Tkinter canvas
-            canvas = FigureCanvasTkAgg(plot, master=canvas_frame)
-            canvas.draw()
-            canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            ms_canvas = FigureCanvasTkAgg(plot, master=canvas_frame)
+            ms_canvas.draw()
+            ms_canvas.get_tk_widget().grid(row=0, column=0,pady=(12,0), sticky='nsew')  # Use grid for precise placement
             
         def process_results():
             # Example processing and plotting function
@@ -831,17 +890,13 @@ def UI():
             #data_dict = global_state.ms.data_analysis(error_metric, process_window_size.get(), calc_direction, position_tolerance.get(), df=df.get())
             aero_dict = global_state.ms.aero_move_and_settle(desired_time, pos_tolerance,sig=avg,df=df.get())
             
-            # Embed the metric plot in the Tkinter GUI
-            plot_frame = tk.Frame(master=tab1)
-            plot_frame.grid(row=tab1.h2_row, column=4, rowspan=16, columnspan=3, padx=(3,0), pady=(5, 0), sticky='nsew')
-            
-            canvas_size = get_canvas_size_in_inches(plot_frame)
+            canvas_size = get_canvas_size_in_inches(plot_frame_tab1)
             
             # Plot the metric plot using your existing function
             plt.rcParams.update({'font.size': 10})
             aero_plot = global_state.ms.GUI_plot(aero_dict, canvas_size, figNum=3, legend_size=7,step_num=df.get()) 
             
-            embed_plot_in_canvas(aero_plot,plot_frame)
+            embed_plot_in_canvas(aero_plot,plot_frame_tab1)
             
             print('The Aerotech Move and Settle Time is {} seconds'.format(aero_dict['Aerotech Move and Settle Time']))
             
@@ -1041,141 +1096,136 @@ def UI():
         return None  # If not found, return None or handle it as needed
     
     # Create the UI elements and assign the stored values
-    ms_lbl_test = tk.Label(master=tab1, text="Select Test Type:")
-    ms_lbl_test.grid(row=tab1.tt_row, column=0, padx=5, pady=5)
+    ms_lbl_test = tk.Label(master=input_frame_tab1, text="Select Test Type:")
+    ms_lbl_test.grid(row=input_frame_tab1.tt_row, column=0, padx=5, pady=5)
 
     ms_direction = tk.StringVar(value=0)
-    ms_uni_dir = tk.Radiobutton(master=tab1, text="Unidirectional", variable=ms_direction, value="uni", command=ms_test_type_def)
-    ms_uni_dir.grid(row=tab1.tt_row, column=1, padx=5, pady=5)
+    ms_uni_dir = tk.Radiobutton(master=input_frame_tab1, text="Unidirectional", variable=ms_direction, value="uni", command=ms_test_type_def)
+    ms_uni_dir.grid(row=input_frame_tab1.tt_row, column=1, padx=5, pady=5)
 
-    ms_bi_dir = tk.Radiobutton(master=tab1, text="Bidirectional", variable=ms_direction, value="bi", command=ms_test_type_def)
-    ms_bi_dir.grid(row=tab1.tt_row, column=2, padx=5, pady=5)
+    ms_bi_dir = tk.Radiobutton(master=input_frame_tab1, text="Bidirectional", variable=ms_direction, value="bi", command=ms_test_type_def)
+    ms_bi_dir.grid(row=input_frame_tab1.tt_row, column=2, padx=5, pady=5)
     
-    ms_lbl_axis = tk.Label(master=tab1, text="Axis Name", width=25, height=1)
-    ms_lbl_axis.grid(row=tab1.axis_row, column=0, padx=5, pady=5)
+    ms_lbl_axis = tk.Label(master=input_frame_tab1, text="Axis Name", width=25, height=1)
+    ms_lbl_axis.grid(row=input_frame_tab1.axis_row, column=0, padx=5, pady=5)
 
     ms_axis = tk.StringVar(value=ms_axis_value)
-    ms_ent_axis = tk.Entry(master=tab1, textvariable=ms_axis, width=25)
-    ms_ent_axis.grid(row=tab1.axis_row, column=1, padx=5, pady=5)
+    ms_ent_axis = tk.Entry(master=input_frame_tab1, textvariable=ms_axis, width=25)
+    ms_ent_axis.grid(row=input_frame_tab1.axis_row, column=1, padx=5, pady=5)
 
-    ms_lbl_st = tk.Label(master=tab1, text="Start Position", width=25, height=1)
-    ms_lbl_st.grid(row=tab1.start_row, column=0, padx=5, pady=5)
+    ms_lbl_st = tk.Label(master=input_frame_tab1, text="Start Position", width=25, height=1)
+    ms_lbl_st.grid(row=input_frame_tab1.start_row, column=0, padx=5, pady=5)
 
     ms_start = tk.DoubleVar(value=ms_start_value)
-    ms_ent_start_pos = tk.Entry(master=tab1, textvariable=ms_start, width=25)
-    ms_ent_start_pos.grid(row=tab1.start_row, column=1, padx=5, pady=5)
+    ms_ent_start_pos = tk.Entry(master=input_frame_tab1, textvariable=ms_start, width=25)
+    ms_ent_start_pos.grid(row=input_frame_tab1.start_row, column=1, padx=5, pady=5)
 
-    ms_lbl_end_pos = tk.Label(master=tab1, text="End Position", width=25, height=1)
-    ms_lbl_end_pos.grid(row=tab1.end_row, column=0, padx=5, pady=5)
+    ms_lbl_end_pos = tk.Label(master=input_frame_tab1, text="End Position", width=25, height=1)
+    ms_lbl_end_pos.grid(row=input_frame_tab1.end_row, column=0, padx=5, pady=5)
 
     ms_end = tk.DoubleVar(value=ms_end_value)
-    ms_ent_end_pos = tk.Entry(master=tab1, textvariable=ms_end, width=25)
-    ms_ent_end_pos.grid(row=tab1.end_row, column=1, padx=5, pady=5)
+    ms_ent_end_pos = tk.Entry(master=input_frame_tab1, textvariable=ms_end, width=25)
+    ms_ent_end_pos.grid(row=input_frame_tab1.end_row, column=1, padx=5, pady=5)
 
-    ms_lbl_step_size = tk.Label(master=tab1, text="Step Size", width=25, height=1)
-    ms_lbl_step_size.grid(row=tab1.step_row, column=0, padx=5, pady=5)
+    ms_lbl_step_size = tk.Label(master=input_frame_tab1, text="Step Size", width=25, height=1)
+    ms_lbl_step_size.grid(row=input_frame_tab1.step_row, column=0, padx=5, pady=5)
 
     ms_step = tk.DoubleVar(value=ms_step_value)
-    ms_ent_step_size = tk.Entry(master=tab1, textvariable=ms_step, width=25)
-    ms_ent_step_size.grid(row=tab1.step_row, column=1, padx=5, pady=5)
+    ms_ent_step_size = tk.Entry(master=input_frame_tab1, textvariable=ms_step, width=25)
+    ms_ent_step_size.grid(row=input_frame_tab1.step_row, column=1, padx=5, pady=5)
 
-    ms_lbl_iter = tk.Label(master=tab1, text="Iterations")
-    ms_lbl_iter.grid(row=tab1.iter_row, column=0, padx=5, pady=5)
+    ms_lbl_iter = tk.Label(master=input_frame_tab1, text="Iterations")
+    ms_lbl_iter.grid(row=input_frame_tab1.iter_row, column=0, padx=5, pady=5)
 
     ms_iter = tk.DoubleVar(value=ms_iter_value)
-    ms_ent_iter = tk.Entry(master=tab1, textvariable=ms_iter, width=25)
-    ms_ent_iter.grid(row=tab1.iter_row, column=1, padx=5, pady=5)
+    ms_ent_iter = tk.Entry(master=input_frame_tab1, textvariable=ms_iter, width=25)
+    ms_ent_iter.grid(row=input_frame_tab1.iter_row, column=1, padx=5, pady=5)
 
-    ms_lbl_speed = tk.Label(master=tab1, text="Velocity", width=25, height=1)
-    ms_lbl_speed.grid(row=tab1.speed_row, column=0, padx=5, pady=5)
+    ms_lbl_speed = tk.Label(master=input_frame_tab1, text="Velocity", width=25, height=1)
+    ms_lbl_speed.grid(row=input_frame_tab1.speed_row, column=0, padx=5, pady=5)
 
     ms_speed = tk.StringVar(value=ms_speed_value)
-    ms_ent_speed = tk.Entry(master=tab1, textvariable=ms_speed, width=25)
-    ms_ent_speed.grid(row=tab1.speed_row, column=1, padx=5, pady=5)
+    ms_ent_speed = tk.Entry(master=input_frame_tab1, textvariable=ms_speed, width=25)
+    ms_ent_speed.grid(row=input_frame_tab1.speed_row, column=1, padx=5, pady=5)
 
-    ms_lbl_ramp_rate = tk.Label(master=tab1, text="Ramp Rate")
-    ms_lbl_ramp_rate.grid(row=tab1.ramp_v_row, column=0, padx=5, pady=5)
+    ms_lbl_ramp_rate = tk.Label(master=input_frame_tab1, text="Ramp Rate")
+    ms_lbl_ramp_rate.grid(row=input_frame_tab1.ramp_v_row, column=0, padx=5, pady=5)
 
     ms_ramp_v = tk.StringVar(value=ms_ramp_v_value)
-    ms_ent_ramp_rate = tk.Entry(master=tab1, textvariable=ms_ramp_v, width=25)
-    ms_ent_ramp_rate.grid(row=tab1.ramp_v_row, column=1, padx=5, pady=5)
+    ms_ent_ramp_rate = tk.Entry(master=input_frame_tab1, textvariable=ms_ramp_v, width=25)
+    ms_ent_ramp_rate.grid(row=input_frame_tab1.ramp_v_row, column=1, padx=5, pady=5)
     
-    ms_lbl_dwell = tk.Label(master=tab1, text="Dwell")
-    ms_lbl_dwell.grid(row=tab1.dwell_row, column=0, padx=5, pady=5)
+    ms_lbl_dwell = tk.Label(master=input_frame_tab1, text="Dwell")
+    ms_lbl_dwell.grid(row=input_frame_tab1.dwell_row, column=0, padx=5, pady=5)
 
     ms_dwell = tk.StringVar(value=ms_dwell_value)
-    ms_ent_dwell = tk.Entry(master=tab1, textvariable=ms_dwell, width=25)
-    ms_ent_dwell.grid(row=tab1.dwell_row, column=1, padx=5, pady=5)
+    ms_ent_dwell = tk.Entry(master=input_frame_tab1, textvariable=ms_dwell, width=25)
+    ms_ent_dwell.grid(row=input_frame_tab1.dwell_row, column=1, padx=5, pady=5)
     
-    ms_lbl_units = tk.Label(master=tab1, text="Units:", width=25, height=1)
-    ms_lbl_units.grid(row=tab1.axis_row, column=2, padx=5, pady=5)
+    ms_lbl_units = tk.Label(master=input_frame_tab1, text="Units:", width=25, height=1)
+    ms_lbl_units.grid(row=input_frame_tab1.axis_row, column=2, padx=5, pady=5)
     
     ms_unit_options = ['mm', 'um', 'nm', 'deg']
     ms_unit = tk.StringVar(value=ms_unit_value)
-    ms_unit_menu = tk.OptionMenu(tab1, ms_unit, *ms_unit_options)
-    ms_unit_menu.grid(row=tab1.start_row, column=2, padx=5, pady=5)
+    ms_unit_menu = tk.OptionMenu(input_frame_tab1, ms_unit, *ms_unit_options)
+    ms_unit_menu.grid(row=input_frame_tab1.start_row, column=2, padx=5, pady=5)
     
-    ms_lbl_err_units = tk.Label(master=tab1, text="Error Units:", width=25, height=1)
-    ms_lbl_err_units.grid(row=tab1.axis_row, column=3, padx=5, pady=5)
+    ms_lbl_err_units = tk.Label(master=input_frame_tab1, text="Error Units:", width=25, height=1)
+    ms_lbl_err_units.grid(row=input_frame_tab1.axis_row, column=3, padx=5, pady=5)
     
     ms_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'deg']
     ms_err_unit = tk.StringVar(value=ms_err_unit_value)
-    ms_err_unit_menu = tk.OptionMenu(tab1, ms_err_unit, *ms_err_unit_options)
-    ms_err_unit_menu.grid(row=tab1.start_row, column=3, padx=5, pady=5)
+    ms_err_unit_menu = tk.OptionMenu(input_frame_tab1, ms_err_unit, *ms_err_unit_options)
+    ms_err_unit_menu.grid(row=input_frame_tab1.start_row, column=3, padx=5, pady=5)
     
-    ms_lbl_sample = tk.Label(master=tab1, text="Sample Rate:", width=25, height=1)
-    ms_lbl_sample.grid(row=tab1.iter_row, column=2, padx=5, pady=5)
+    ms_lbl_sample = tk.Label(master=input_frame_tab1, text="Sample Rate:", width=25, height=1)
+    ms_lbl_sample.grid(row=input_frame_tab1.iter_row, column=2, padx=5, pady=5)
     
     ms_sample_options = [('1 kHz', 1000), ('10 kHz', 10000), ('20 kHz', 20000), ('100 kHz', 100000), ('200 kHz', 200000)]
     ms_sample = tk.StringVar(value=ms_sample_value)
-    ms_sample_menu = tk.OptionMenu(tab1, ms_sample, *[option[0] for option in ms_sample_options])
-    ms_sample_menu.grid(row=tab1.speed_row, column=2, padx=5, pady=5)
+    ms_sample_menu = tk.OptionMenu(input_frame_tab1, ms_sample, *[option[0] for option in ms_sample_options])
+    ms_sample_menu.grid(row=input_frame_tab1.speed_row, column=2, padx=5, pady=5)
 
-    ms_lbl_serial = tk.Label(master=tab1, text="System Serial Number", width=25, height=1)
-    ms_lbl_serial.grid(row=tab1.sys_row, column=0, padx=5, pady=5)
+    ms_lbl_serial = tk.Label(master=input_frame_tab1, text="System Serial Number", width=25, height=1)
+    ms_lbl_serial.grid(row=input_frame_tab1.sys_row, column=0, padx=5, pady=5)
 
     ms_sys = tk.StringVar(value=ms_sys_value)
-    ms_ent_serial = tk.Entry(master=tab1, textvariable=ms_sys, width=25)
-    ms_ent_serial.grid(row=tab1.sys_row, column=1, columnspan=3, padx=5, pady=5)
+    ms_ent_serial = tk.Entry(master=input_frame_tab1, textvariable=ms_sys, width=25)
+    ms_ent_serial.grid(row=input_frame_tab1.sys_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ms_lbl_st_model = tk.Label(master=tab1, text="Part Number", width=25, height=1)
-    ms_lbl_st_model.grid(row=tab1.st_row, column=0, padx=5, pady=5)
+    ms_lbl_st_model = tk.Label(master=input_frame_tab1, text="Part Number", width=25, height=1)
+    ms_lbl_st_model.grid(row=input_frame_tab1.st_row, column=0, padx=5, pady=5)
 
     ms_st = tk.StringVar(value=ms_st_value)
-    ms_ent_st_model = tk.Entry(master=tab1, textvariable=ms_st, width=25)
-    ms_ent_st_model.grid(row=tab1.st_row, column=1, columnspan=3, padx=5, pady=5)
+    ms_ent_st_model = tk.Entry(master=input_frame_tab1, textvariable=ms_st, width=25)
+    ms_ent_st_model.grid(row=input_frame_tab1.st_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ms_lbl_op = tk.Label(master=tab1, text="Operator", width=25, height=1)
-    ms_lbl_op.grid(row=tab1.op_row, column=0, padx=5, pady=5)
+    ms_lbl_op = tk.Label(master=input_frame_tab1, text="Operator", width=25, height=1)
+    ms_lbl_op.grid(row=input_frame_tab1.op_row, column=0, padx=5, pady=5)
 
     ms_opName = tk.StringVar(value=ms_opName_value)
-    ms_ent_op = tk.Entry(master=tab1, textvariable=ms_opName, width=25)
-    ms_ent_op.grid(row=tab1.op_row, column=1, columnspan=3, padx=5, pady=5)
+    ms_ent_op = tk.Entry(master=input_frame_tab1, textvariable=ms_opName, width=25)
+    ms_ent_op.grid(row=input_frame_tab1.op_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ms_lbl_temp = tk.Label(master=tab1, text="Temp", width=25, height=1)
-    ms_lbl_temp.grid(row=tab1.temp_row, column=0, padx=5, pady=5)
+    ms_lbl_temp = tk.Label(master=input_frame_tab1, text="Temp", width=25, height=1)
+    ms_lbl_temp.grid(row=input_frame_tab1.temp_row, column=0, padx=5, pady=5)
 
     ms_temp = tk.DoubleVar(value=ms_temp_value)
-    ms_ent_temp = tk.Entry(master=tab1, textvariable=ms_temp, width=25)
-    ms_ent_temp.grid(row=tab1.temp_row, column=1, columnspan=3, padx=5, pady=5)
+    ms_ent_temp = tk.Entry(master=input_frame_tab1, textvariable=ms_temp, width=25)
+    ms_ent_temp.grid(row=input_frame_tab1.temp_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ms_lbl_comments = tk.Label(master=tab1, text="Comments", width=25, height=1)
-    ms_lbl_comments.grid(row=tab1.com_row, column=0, padx=5, pady=5)
+    ms_lbl_comments = tk.Label(master=input_frame_tab1, text="Comments", width=25, height=1)
+    ms_lbl_comments.grid(row=input_frame_tab1.com_row, column=0, padx=5, pady=5)
 
     ms_comm = tk.StringVar(value=ms_comm_value)
-    ms_ent_comments = tk.Entry(master=tab1, textvariable=ms_comm, width=25)
-    ms_ent_comments.grid(row=tab1.com_row, column=1, columnspan=3, padx=5, pady=5)
+    ms_ent_comments = tk.Entry(master=input_frame_tab1, textvariable=ms_comm, width=25)
+    ms_ent_comments.grid(row=input_frame_tab1.com_row, column=1, columnspan=3, padx=5, pady=5)
 
-    btn_import_rot = tk.Button(master=tab1, text="Import Data", width=30, height=1, command=import_ms_data)
-    btn_import_rot.grid(row=tab1.run_row, column=1, padx=5, pady=5)
+    btn_import_rot = tk.Button(master=input_frame_tab1, text="Import Data", width=30, height=1, command=import_ms_data)
+    btn_import_rot.grid(row=input_frame_tab1.run_row, column=1, padx=5, pady=5)
 
-# =============================================================================
-#     ms_lbl_import_rot = tk.Label(master=tab1, text='', anchor='w')
-#     ms_lbl_import_rot.grid(row=tab1.run_row, column=1, padx=5, pady=5, columnspan=3)
-# =============================================================================
-
-    ms_btn_run_rot = tk.Button(master=tab1, text="Run", width=25, height=1, command=start_moveandsettletest)
-    ms_btn_run_rot.grid(row=tab1.run_row, column=0, padx=5, pady=5)
+    ms_btn_run_rot = tk.Button(master=input_frame_tab1, text="Run", width=25, height=1, command=start_moveandsettletest)
+    ms_btn_run_rot.grid(row=input_frame_tab1.run_row, column=0, padx=5, pady=5)
     
 # =============================================================================
 # 
@@ -1187,69 +1237,101 @@ def UI():
 # 
 # 
 # =============================================================================
+    tab2.grid_rowconfigure(0, weight=1)
+    tab2.grid_rowconfigure(1, weight=1)
+    tab2.grid_columnconfigure(0, weight=1)
+    tab2.grid_columnconfigure(1, weight=1)
+
+    '''
+    # MAIN USER INPUT FRAME
+    '''
+    
+    input_frame_width = 400
+    input_frame_height = 800
+    
+    input_frame_tab2 = tk.Frame(master=tab2, width=input_frame_width, height=input_frame_height)
+    input_frame_tab2.grid(row=0, column=0, sticky='nsew')
+    input_frame_tab2.grid_propagate(False)
+    
     # Configure columns and rows
-    tab2.columnconfigure([0, 1, 2, 3, 4, 5, 6], weight=1, minsize=700 / 4, uniform='column')
-    tab2.rowconfigure([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], weight=1, minsize=1)
+    input_frame_tab2.columnconfigure([0, 1, 2, 3], weight=1, uniform='column')
+    input_frame_tab2.rowconfigure(list(range(15)), weight=1)
 
     # Define row indices
-    tab2.h1_row = 0
-    tab2.axis_row = 1
-    tab2.sig_row = 2
-    tab2.units_row = 3
-    tab2.err_row = 4
-    tab2.samp_row = 5
-    tab2.dwell_row = 6
-    tab2.dir_row = 7
-    tab2.h2_row = 8
-    tab2.sys_row = 9
-    tab2.st_row = 10
-    tab2.op_row = 11
-    tab2.temp_row = 12
-    tab2.com_row = 13
-    tab2.h3_row = 14
-    tab2.run_row = 15
-    tab2.out_row = 16
+    input_frame_tab2.h1_row = 0
+    input_frame_tab2.axis_row = 1
+    input_frame_tab2.sig_row = 2
+    input_frame_tab2.units_row = 3
+    input_frame_tab2.err_row = 4
+    input_frame_tab2.samp_row = 5
+    input_frame_tab2.dwell_row = 6
+    input_frame_tab2.dir_row = 7
+    input_frame_tab2.h2_row = 8
+    input_frame_tab2.sys_row = 9
+    input_frame_tab2.st_row = 10
+    input_frame_tab2.op_row = 11
+    input_frame_tab2.temp_row = 12
+    input_frame_tab2.com_row = 13
+    input_frame_tab2.h3_row = 14
+    input_frame_tab2.run_row = 15
     
-    window.rowconfigure(tab2.out_row, minsize=4)
-
     # Create horizontal separators
-    ttk.Separator(master=tab2, orient='horizontal').grid(row=tab2.h1_row, column=0, columnspan=4, sticky='ew')
-    ttk.Separator(master=tab2, orient='horizontal').grid(row=tab2.h2_row, column=0, columnspan=4, sticky='ew')
-    ttk.Separator(master=tab2, orient='horizontal').grid(row=tab2.h3_row, column=0, columnspan=4, sticky='ew')
-
-    # Adjust column weights so the vertical separator aligns correctly
-    tab2.columnconfigure(3, weight=1)
-    tab2.columnconfigure(4, weight=1)
-    
+    ttk.Separator(master=input_frame_tab2, orient='horizontal').grid(
+        row=input_frame_tab2.h1_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
+    ttk.Separator(master=input_frame_tab2, orient='horizontal').grid(
+        row=input_frame_tab2.h2_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
+    ttk.Separator(master=input_frame_tab2, orient='horizontal').grid(
+        row=input_frame_tab2.h3_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
     # Add the vertical separator to the frame
-    ttk.Separator(master=tab2, orient='vertical').grid(row=tab2.h1_row, column=4, rowspan=17, sticky='nsw', pady=(4, 0))    
- 
-    # Create a Frame to hold the Text widget and the Scrollbar
-    frame1 = tk.Frame(tab2)
+    ttk.Separator(master=input_frame_tab2, orient='vertical').grid(
+        row=input_frame_tab2.h1_row,
+        column=4,
+        rowspan=21,
+        sticky='nsw',
+        pady=(7, 0)
+    ) 
 
-    # Create the Text widget
-    txt_outStr1 = tk.Text(master=frame1, state=tk.DISABLED, height=10, fg='white', bg='black')
-
-    # Create the Scrollbar widget
-    outStr_scroll1 = tk.Scrollbar(master=frame1, orient=tk.VERTICAL)
-
-    # Link the Scrollbar to the Text widget
+    
+    '''
+    # TEXT WIDGET FRAME
+    '''
+    
+    # Create the frame without fixed width and height
+    text_frame_tab2 = tk.Frame(master=tab2)
+    text_frame_tab2.grid(row=1, column=0, sticky='nsew', padx=5, pady=5)
+    text_frame_tab2.grid_propagate(True)  # Allow frame to resize based on content
+    
+    # Configure the grid in text_frame_tab3
+    text_frame_tab2.grid_rowconfigure(0, weight=1)  # Allow row 0 to expand
+    text_frame_tab2.grid_columnconfigure(0, weight=1)  # Allow column 0 (Text widget) to expand
+    text_frame_tab2.grid_columnconfigure(1, weight=0)  # Keep column 1 (Scrollbar) at a fixed size
+    
+    # Create the text widget and scrollbar
+    txt_outStr1 = tk.Text(master=text_frame_tab2, state=tk.DISABLED, fg='white', bg='black')
+    outStr_scroll1 = tk.Scrollbar(master=text_frame_tab2, orient=tk.VERTICAL)
+    
+    # Configure the scrollbar
     txt_outStr1.configure(yscrollcommand=outStr_scroll1.set)
     outStr_scroll1.config(command=txt_outStr1.yview)
-
-    # Pack the Text widget and the Scrollbar inside the Frame
-    txt_outStr1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    outStr_scroll1.pack(side=tk.LEFT, fill=tk.Y)
-
-    # Grid the Frame containing the Text widget and the Scrollbar
-    frame1.grid(row=tab2.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
-
-    # Create the logger object
-    text_logger1 = TextLogger(txt_outStr1)
     
-    # Configure the grid to expand the Frame
-    tab2.grid_rowconfigure(tab2.out_row, weight=1)
-    tab2.grid_columnconfigure(0, weight=1) 
+    # Place the widgets using grid
+    txt_outStr1.grid(row=0, column=0, sticky='nsew')
+    outStr_scroll1.grid(row=0, column=1, sticky='ns')
+    
+    # Initialize the text logger
+    text_logger1 = TextLogger(txt_outStr1)
     
     def start_jittertest():
         global_state.reset()
@@ -1561,6 +1643,20 @@ def UI():
         
         return new_folder_path
     
+    # PLOT FRAMES
+    plot_frame_width = 600
+    plot_frame_height = 1000
+
+    # Remove width and height, and grid_propagate(False)
+    plot_frame_tab2 = tk.Frame(master=tab2, width=plot_frame_width, height=plot_frame_height)
+    plot_frame_tab2.grid(row=0, column=1, rowspan=2, sticky='nsew')
+    plot_frame_tab2.grid_propagate(False)
+    
+    # Configure the frames to expand
+    plot_frame_tab2.grid_rowconfigure(0, weight=1)
+    plot_frame_tab2.grid_rowconfigure(1, weight=1)
+    plot_frame_tab2.grid_columnconfigure(0, weight=1)
+    
     def ipj_process_data():
         global crms_freq, high_bound, low_bound, ipj_new_folder_path
         def plot_data_func():
@@ -1624,40 +1720,45 @@ def UI():
             data_dict = global_state.ipj.data_analysis(mode, [low_bound.get(), high_bound.get()])
         
             # Plotting the jitter data
-            fig1 = plt.figure(figsize=(10, 5))
+            fig1 = plt.figure(figsize=(6, 2))
             ax1 = fig1.add_subplot(111)
             ax1.plot(data_dict['t_window'], data_dict['d_window'], '-r')
-            ax1.set_xlabel('Time (seconds)', size=12)
-            ax1.set_ylabel('Jitter ({})'.format(ipj_err_unit.get()), size=12)
-            ax1.tick_params(axis='both', labelsize=10)
+            ax1.set_xlabel('Time (seconds)', size=10)
+            ax1.set_ylabel('Jitter ({})'.format(ipj_err_unit.get()), size=10)
+            ax1.tick_params(axis='both', labelsize=8)
         
             print(f'The sample standard deviation is {data_dict["stdev"]:.3e}')
             print(f'The peak-to-peak in-position jitter is {data_dict["peak"]:.3e}')
         
             # Plotting the CRMS data
-            fig2 = plt.figure(figsize=(10, 5))
+            fig2 = plt.figure(figsize=(6, 2))
             ax2 = fig2.add_subplot(111)
             ax2.plot(data_dict['freq'], data_dict['CRMS'])
-            ax2.set_xlabel('Frequency Hz', size=12)
-            ax2.set_ylabel('Cumulative RMS ({})'.format(ipj_err_unit.get()), size=12)
-            ax2.tick_params(axis='both', labelsize=10)
+            ax2.set_xlabel('Frequency Hz', size=10)
+            ax2.set_ylabel('Cumulative RMS ({})'.format(ipj_err_unit.get()), size=10)
+            ax2.tick_params(axis='both', labelsize=8)
             ax2.set_xlim(0, crms_freq.get())
-        
-            # Embed the first plot in the GUI
-            plot_frame1 = tk.Frame(master=tab2)
-            plot_frame1.grid(row=tab2.h1_row, column=4, rowspan=7, columnspan=3, padx=(3, 0), pady=(8, 0), sticky='nsew')
-            canvas1 = FigureCanvasTkAgg(fig1, master=plot_frame1)
-            canvas1.draw()
-            canvas1.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        
-            # Embed the second plot in the GUI
-            plot_frame2 = tk.Frame(master=tab2)
-            plot_frame2.grid(row=tab2.h2_row, column=4, rowspan=6, columnspan=3, padx=(3, 0), pady=(0, 0), sticky='nsew')
-            canvas2 = FigureCanvasTkAgg(fig2, master=plot_frame2)
-            canvas2.draw()
-            canvas2.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            
+            ipj_embed_plot_in_canvas(fig1,fig2,plot_frame_tab2)
             
             plot_results_plotly()
+            
+        def ipj_embed_plot_in_canvas(jitter_plot, crms_plot, canvas_frame):
+            # Clear any existing plots in the frames
+            for widget in canvas_frame.winfo_children():
+                widget.destroy()
+            for widget in canvas_frame.winfo_children():
+                widget.destroy()
+        
+            # Embed the first plot (stair plot) in the Tkinter canvas in row 0
+            jitter_canvas = FigureCanvasTkAgg(jitter_plot, master=canvas_frame)
+            jitter_canvas.draw()
+            jitter_canvas.get_tk_widget().grid(row=0, column=0, pady=(7,0), sticky='nsew')  # Use grid for precise placement
+        
+            # Embed the second plot (step plot) in the Tkinter canvas in row 1
+            crms_canvas = FigureCanvasTkAgg(crms_plot, master=canvas_frame)
+            crms_canvas.draw()
+            crms_canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew')  # Use grid for precise placement
             
         def plot_results_plotly():
             global ipj_new_folder_path
@@ -1910,119 +2011,119 @@ def UI():
                 return option[1]
         return None  # If not found, return None or handle it as needed
 
-    ipj_lbl_axis = tk.Label(master=tab2, text="Axis Name", width=25, height=1)
-    ipj_lbl_axis.grid(row=tab2.axis_row, column=0, padx=5, pady=5)
+    ipj_lbl_axis = tk.Label(master=input_frame_tab2, text="Axis Name", width=25, height=1)
+    ipj_lbl_axis.grid(row=input_frame_tab2.axis_row, column=0, padx=5, pady=5)
 
     ipj_axis = tk.StringVar(value=ipj_axis_value)
-    ipj_ent_axis = tk.Entry(master=tab2, textvariable=ipj_axis, width=25)
-    ipj_ent_axis.grid(row=tab2.axis_row, column=1, padx=5, pady=5)
+    ipj_ent_axis = tk.Entry(master=input_frame_tab2, textvariable=ipj_axis, width=25)
+    ipj_ent_axis.grid(row=input_frame_tab2.axis_row, column=1, padx=5, pady=5)
 
-    ipj_lbl_sig = tk.Label(master=tab2, text="Signal", width=25, height=1)
-    ipj_lbl_sig.grid(row=tab2.sig_row, column=0, padx=5, pady=5)
+    ipj_lbl_sig = tk.Label(master=input_frame_tab2, text="Signal", width=25, height=1)
+    ipj_lbl_sig.grid(row=input_frame_tab2.sig_row, column=0, padx=5, pady=5)
     
     ipj_signal_var = tk.StringVar(value=ipj_signal_value)
     ipj_signal_var.trace_add('write', ipj_signal_def)
     ipj_signal_options = ['Encoder', 'Capacitance Probe']
-    ipj_signal_menu = tk.OptionMenu(tab2, ipj_signal_var, *ipj_signal_options)
-    ipj_signal_menu.grid(row=tab2.sig_row, column=1, padx=5, pady=5)
+    ipj_signal_menu = tk.OptionMenu(input_frame_tab2, ipj_signal_var, *ipj_signal_options)
+    ipj_signal_menu.grid(row=input_frame_tab2.sig_row, column=1, padx=5, pady=5)
 
-    ipj_lbl_probe = tk.Label(master=tab2, text="Probe Axis Name:", width=25, height=1,state=tk.DISABLED)
-    ipj_lbl_probe.grid(row=tab2.sig_row, column=2, padx=5, pady=5)
+    ipj_lbl_probe = tk.Label(master=input_frame_tab2, text="Probe Axis Name:", width=25, height=1,state=tk.DISABLED)
+    ipj_lbl_probe.grid(row=input_frame_tab2.sig_row, column=2, padx=5, pady=5)
 
     ipj_probe = tk.StringVar(value=ipj_probe_value)
-    ipj_ent_probe = tk.Entry(master=tab2, textvariable=ipj_probe, width=25,state=tk.DISABLED)
-    ipj_ent_probe.grid(row=tab2.units_row, column=2, padx=5, pady=5)
+    ipj_ent_probe = tk.Entry(master=input_frame_tab2, textvariable=ipj_probe, width=25,state=tk.DISABLED)
+    ipj_ent_probe.grid(row=input_frame_tab2.units_row, column=2, padx=5, pady=5)
     
-    ipj_lbl_sens = tk.Label(master=tab2, text="Scale Factor (User Units)", width=25, height=1,state=tk.DISABLED)
-    ipj_lbl_sens.grid(row=tab2.sig_row, column=3, padx=5, pady=5)
+    ipj_lbl_sens = tk.Label(master=input_frame_tab2, text="Scale Factor (User Units)", width=25, height=1,state=tk.DISABLED)
+    ipj_lbl_sens.grid(row=input_frame_tab2.sig_row, column=3, padx=5, pady=5)
 
     ipj_sens = tk.StringVar(value=ipj_sens_value)
-    ipj_ent_sens = tk.Entry(master=tab2, textvariable=ipj_sens, width=25,state=tk.DISABLED)
-    ipj_ent_sens.grid(row=tab2.units_row, column=3, padx=5, pady=5)
+    ipj_ent_sens = tk.Entry(master=input_frame_tab2, textvariable=ipj_sens, width=25,state=tk.DISABLED)
+    ipj_ent_sens.grid(row=input_frame_tab2.units_row, column=3, padx=5, pady=5)
     
-    ipj_lbl_units = tk.Label(master=tab2, text="Units:", width=25, height=1)
-    ipj_lbl_units.grid(row=tab2.units_row, column=0, padx=5, pady=5)
+    ipj_lbl_units = tk.Label(master=input_frame_tab2, text="Units:", width=25, height=1)
+    ipj_lbl_units.grid(row=input_frame_tab2.units_row, column=0, padx=5, pady=5)
     
     ipj_unit_options = ['mm', 'um', 'nm', 'deg']
     ipj_unit = tk.StringVar(value=ipj_unit_value)
-    ipj_unit_menu = tk.OptionMenu(tab2, ipj_unit, *ipj_unit_options)
-    ipj_unit_menu.grid(row=tab2.units_row, column=1, padx=5, pady=5)
+    ipj_unit_menu = tk.OptionMenu(input_frame_tab2, ipj_unit, *ipj_unit_options)
+    ipj_unit_menu.grid(row=input_frame_tab2.units_row, column=1, padx=5, pady=5)
 
-    ipj_lbl_err_units = tk.Label(master=tab2, text="Error Units:", width=25, height=1)
-    ipj_lbl_err_units.grid(row=tab2.err_row, column=0, padx=5, pady=5)
+    ipj_lbl_err_units = tk.Label(master=input_frame_tab2, text="Error Units:", width=25, height=1)
+    ipj_lbl_err_units.grid(row=input_frame_tab2.err_row, column=0, padx=5, pady=5)
     
     ipj_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'deg']
     ipj_err_unit = tk.StringVar(value=ipj_err_unit_value)
-    ipj_err_unit_menu = tk.OptionMenu(tab2, ipj_err_unit, *ipj_err_unit_options)
-    ipj_err_unit_menu.grid(row=tab2.err_row, column=1, padx=5, pady=5)
+    ipj_err_unit_menu = tk.OptionMenu(input_frame_tab2, ipj_err_unit, *ipj_err_unit_options)
+    ipj_err_unit_menu.grid(row=input_frame_tab2.err_row, column=1, padx=5, pady=5)
     
-    ipj_lbl_sample = tk.Label(master=tab2, text="Sample Rate:", width=25, height=1)
-    ipj_lbl_sample.grid(row=tab2.samp_row, column=0, padx=5, pady=5)
+    ipj_lbl_sample = tk.Label(master=input_frame_tab2, text="Sample Rate:", width=25, height=1)
+    ipj_lbl_sample.grid(row=input_frame_tab2.samp_row, column=0, padx=5, pady=5)
     
     ipj_sample_options = [('1 kHz', 1000), ('10 kHz', 10000), ('20 kHz', 20000), ('100 kHz', 100000), ('200 kHz', 200000)]
     ipj_samp = tk.StringVar(value=ipj_sample_value)
-    ipj_sample_menu = tk.OptionMenu(tab2, ipj_samp, *[option[0] for option in ipj_sample_options])
+    ipj_sample_menu = tk.OptionMenu(input_frame_tab2, ipj_samp, *[option[0] for option in ipj_sample_options])
     ipj_sample_menu.configure(state=tk.DISABLED)
-    ipj_sample_menu.grid(row=tab2.samp_row, column=1, padx=5, pady=5)
+    ipj_sample_menu.grid(row=input_frame_tab2.samp_row, column=1, padx=5, pady=5)
     
-    ipj_lbl_dwell = tk.Label(master=tab2, text="Duration")
-    ipj_lbl_dwell.grid(row=tab2.dwell_row, column=0, padx=5, pady=5)
+    ipj_lbl_dwell = tk.Label(master=input_frame_tab2, text="Duration")
+    ipj_lbl_dwell.grid(row=input_frame_tab2.dwell_row, column=0, padx=5, pady=5)
 
     ipj_dwell = tk.StringVar(value=ipj_dwell_value)
-    ipj_ent_dwell = tk.Entry(master=tab2, textvariable=ipj_dwell, width=25)
-    ipj_ent_dwell.grid(row=tab2.dwell_row, column=1, padx=5, pady=5)    
+    ipj_ent_dwell = tk.Entry(master=input_frame_tab2, textvariable=ipj_dwell, width=25)
+    ipj_ent_dwell.grid(row=input_frame_tab2.dwell_row, column=1, padx=5, pady=5)    
     
     # Create the UI elements and assign the stored values
-    ipj_lbl_dir = tk.Label(master=tab2, text="Direction To Sensor:",state=tk.DISABLED)
-    ipj_lbl_dir.grid(row=tab2.dir_row, column=0, padx=5, pady=5)
+    ipj_lbl_dir = tk.Label(master=input_frame_tab2, text="Direction To Sensor:",state=tk.DISABLED)
+    ipj_lbl_dir.grid(row=input_frame_tab2.dir_row, column=0, padx=5, pady=5)
 
     ipj_direction_var = tk.StringVar(value=ipj_direction_value)
-    ipj_pos_dir = tk.Radiobutton(master=tab2, text="Positive", variable=ipj_direction_var, value="pos",state=tk.DISABLED, command=ipj_direction_def)
-    ipj_pos_dir.grid(row=tab2.dir_row, column=1, padx=5, pady=5)
+    ipj_pos_dir = tk.Radiobutton(master=input_frame_tab2, text="Positive", variable=ipj_direction_var, value="pos",state=tk.DISABLED, command=ipj_direction_def)
+    ipj_pos_dir.grid(row=input_frame_tab2.dir_row, column=1, padx=5, pady=5)
 
-    ipj_neg_dir = tk.Radiobutton(master=tab2, text="Negative", variable=ipj_direction_var, value="neg",state=tk.DISABLED, command=ipj_direction_def)
-    ipj_neg_dir.grid(row=tab2.dir_row, column=2, padx=5, pady=5)
+    ipj_neg_dir = tk.Radiobutton(master=input_frame_tab2, text="Negative", variable=ipj_direction_var, value="neg",state=tk.DISABLED, command=ipj_direction_def)
+    ipj_neg_dir.grid(row=input_frame_tab2.dir_row, column=2, padx=5, pady=5)
 
-    ipj_lbl_serial = tk.Label(master=tab2, text="System Serial Number", width=25, height=1)
-    ipj_lbl_serial.grid(row=tab2.sys_row, column=0, padx=5, pady=5)
+    ipj_lbl_serial = tk.Label(master=input_frame_tab2, text="System Serial Number", width=25, height=1)
+    ipj_lbl_serial.grid(row=input_frame_tab2.sys_row, column=0, padx=5, pady=5)
 
     ipj_sys = tk.StringVar(value=ipj_sys_value)
-    ipj_ent_serial = tk.Entry(master=tab2, textvariable=ipj_sys, width=25)
-    ipj_ent_serial.grid(row=tab2.sys_row, column=1, columnspan=3, padx=5, pady=5)
+    ipj_ent_serial = tk.Entry(master=input_frame_tab2, textvariable=ipj_sys, width=25)
+    ipj_ent_serial.grid(row=input_frame_tab2.sys_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ipj_lbl_st_model = tk.Label(master=tab2, text="Part Number", width=25, height=1)
-    ipj_lbl_st_model.grid(row=tab2.st_row, column=0, padx=5, pady=5)
+    ipj_lbl_st_model = tk.Label(master=input_frame_tab2, text="Part Number", width=25, height=1)
+    ipj_lbl_st_model.grid(row=input_frame_tab2.st_row, column=0, padx=5, pady=5)
 
     ipj_st = tk.StringVar(value=ipj_st_value)
-    ipj_ent_st_model = tk.Entry(master=tab2, textvariable=ipj_st, width=25)
-    ipj_ent_st_model.grid(row=tab2.st_row, column=1, columnspan=3, padx=5, pady=5)
+    ipj_ent_st_model = tk.Entry(master=input_frame_tab2, textvariable=ipj_st, width=25)
+    ipj_ent_st_model.grid(row=input_frame_tab2.st_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ipj_lbl_op = tk.Label(master=tab2, text="Operator", width=25, height=1)
-    ipj_lbl_op.grid(row=tab2.op_row, column=0, padx=5, pady=5)
+    ipj_lbl_op = tk.Label(master=input_frame_tab2, text="Operator", width=25, height=1)
+    ipj_lbl_op.grid(row=input_frame_tab2.op_row, column=0, padx=5, pady=5)
 
     ipj_opName = tk.StringVar(value=ipj_opName_value)
-    ipj_ent_op = tk.Entry(master=tab2, textvariable=ipj_opName, width=25)
-    ipj_ent_op.grid(row=tab2.op_row, column=1, columnspan=3, padx=5, pady=5)
+    ipj_ent_op = tk.Entry(master=input_frame_tab2, textvariable=ipj_opName, width=25)
+    ipj_ent_op.grid(row=input_frame_tab2.op_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ipj_lbl_temp = tk.Label(master=tab2, text="Temp", width=25, height=1)
-    ipj_lbl_temp.grid(row=tab2.temp_row, column=0, padx=5, pady=5)
+    ipj_lbl_temp = tk.Label(master=input_frame_tab2, text="Temp", width=25, height=1)
+    ipj_lbl_temp.grid(row=input_frame_tab2.temp_row, column=0, padx=5, pady=5)
 
     ipj_temp = tk.DoubleVar(value=ipj_temp_value)
-    ipj_ent_temp = tk.Entry(master=tab2, textvariable=ipj_temp, width=25)
-    ipj_ent_temp.grid(row=tab2.temp_row, column=1, columnspan=3, padx=5, pady=5)
+    ipj_ent_temp = tk.Entry(master=input_frame_tab2, textvariable=ipj_temp, width=25)
+    ipj_ent_temp.grid(row=input_frame_tab2.temp_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ipj_lbl_comments = tk.Label(master=tab2, text="Comments", width=25, height=1)
-    ipj_lbl_comments.grid(row=tab2.com_row, column=0, padx=5, pady=5)
+    ipj_lbl_comments = tk.Label(master=input_frame_tab2, text="Comments", width=25, height=1)
+    ipj_lbl_comments.grid(row=input_frame_tab2.com_row, column=0, padx=5, pady=5)
 
     ipj_comm = tk.StringVar(value=ipj_comm_value)
-    ipj_ent_comments = tk.Entry(master=tab2, textvariable=ipj_comm, width=25)
-    ipj_ent_comments.grid(row=tab2.com_row, column=1, columnspan=3, padx=5, pady=5)
+    ipj_ent_comments = tk.Entry(master=input_frame_tab2, textvariable=ipj_comm, width=25)
+    ipj_ent_comments.grid(row=input_frame_tab2.com_row, column=1, columnspan=3, padx=5, pady=5)
 
-    btn_import_rot = tk.Button(master=tab2, text="Import Data", width=30, height=1, command=import_ipj_data)
-    btn_import_rot.grid(row=tab2.run_row, column=1, padx=5, pady=5)
+    btn_import_rot = tk.Button(master=input_frame_tab2, text="Import Data", width=30, height=1, command=import_ipj_data)
+    btn_import_rot.grid(row=input_frame_tab2.run_row, column=1, padx=5, pady=5)
 
-    ipj_btn_run_rot = tk.Button(master=tab2, text="Run", width=25, height=1, command=start_jittertest)
-    ipj_btn_run_rot.grid(row=tab2.run_row, column=0, padx=5, pady=5)
+    ipj_btn_run_rot = tk.Button(master=input_frame_tab2, text="Run", width=25, height=1, command=start_jittertest)
+    ipj_btn_run_rot.grid(row=input_frame_tab2.run_row, column=0, padx=5, pady=5)
 
 # =============================================================================
 # Tab 3
@@ -2036,70 +2137,116 @@ def UI():
 # 
 # 
 # 
-# =============================================================================
+# =============================================================================  
+    tab3.grid_rowconfigure(0, weight=1)
+    tab3.grid_rowconfigure(1, weight=1)
+    tab3.grid_columnconfigure(0, weight=1)
+    tab3.grid_columnconfigure(1, weight=1)
+
+    '''
+    # MAIN USER INPUT FRAME
+    '''
     
-    #for tab in (tab1, tab2, tab3):
+    input_frame_width = 400
+    input_frame_height = 800
+    
+    input_frame_tab3 = tk.Frame(master=tab3, width=input_frame_width, height=input_frame_height)
+    input_frame_tab3.grid(row=0, column=0, sticky='nsew')
+    input_frame_tab3.grid_propagate(False)
+    
     # Configure columns and rows
-    tab3.columnconfigure([0, 1, 2, 3, 4, 5, 6], weight=1, minsize=700 / 4, uniform='column')
-    tab3.rowconfigure([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], weight=1, minsize=1)
-
+    input_frame_tab3.columnconfigure([0, 1, 2, 3], weight=1, uniform='column')
+    input_frame_tab3.rowconfigure(list(range(22)), weight=1)
+    
     # Define row indices
-    tab3.h0_row = 0
-    tab3.h1_row = 1
-    tab3.tt_row = 2
-    tab3.h2_row = 3
-    tab3.axis_row = 4
-    tab3.start_row = 5
-    tab3.step_row = 6
-    tab3.num_step_row = 7
-    tab3.speed_row = 8
-    tab3.ramp_v_row = 9
-    tab3.dwell_row = 10
-    tab3.ipj_row = 11
-    tab3.h3_row = 12
-    tab3.sys_row = 13
-    tab3.st_row = 14
-    tab3.op_row = 15
-    tab3.temp_row = 16
-    tab3.com_row = 17
-    tab3.sens_row = 18
-    tab3.h4_row = 19
-    tab3.run_row = 20
-    tab3.out_row = 21
-
-    window.rowconfigure(tab3.out_row, minsize=4)
-
+    input_frame_tab3.h0_row = 0
+    input_frame_tab3.h1_row = 1
+    input_frame_tab3.tt_row = 2
+    input_frame_tab3.h2_row = 3
+    input_frame_tab3.axis_row = 4
+    input_frame_tab3.start_row = 5
+    input_frame_tab3.step_row = 6
+    input_frame_tab3.num_step_row = 7
+    input_frame_tab3.speed_row = 8
+    input_frame_tab3.ramp_v_row = 9
+    input_frame_tab3.dwell_row = 10
+    input_frame_tab3.ipj_row = 11
+    input_frame_tab3.h3_row = 12
+    input_frame_tab3.sys_row = 13
+    input_frame_tab3.st_row = 14
+    input_frame_tab3.op_row = 15
+    input_frame_tab3.temp_row = 16
+    input_frame_tab3.com_row = 17
+    input_frame_tab3.sens_row = 18
+    input_frame_tab3.h4_row = 19
+    input_frame_tab3.run_row = 20
+    
+    
     # Create horizontal separators
-    ttk.Separator(master=tab3, orient='horizontal').grid(row=tab3.h1_row, column=0, columnspan=4, sticky='ew')
-    ttk.Separator(master=tab3, orient='horizontal').grid(row=tab3.h2_row, column=0, columnspan=4, sticky='ew')
-    ttk.Separator(master=tab3, orient='horizontal').grid(row=tab3.h3_row, column=0, columnspan=4, sticky='ew')
-    ttk.Separator(master=tab3, orient='horizontal').grid(row=tab3.h4_row, column=0, columnspan=4, sticky='ew')
-
-    # Adjust column weights so the vertical separator aligns correctly
-    tab3.columnconfigure(3, weight=1)
-    tab3.columnconfigure(4, weight=1)
+    ttk.Separator(master=input_frame_tab3, orient='horizontal').grid(
+        row=input_frame_tab3.h1_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
+    ttk.Separator(master=input_frame_tab3, orient='horizontal').grid(
+        row=input_frame_tab3.h2_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
+    ttk.Separator(master=input_frame_tab3, orient='horizontal').grid(
+        row=input_frame_tab3.h3_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
+    ttk.Separator(master=input_frame_tab3, orient='horizontal').grid(
+        row=input_frame_tab3.h4_row,
+        column=0,
+        columnspan=4,
+        sticky='ew'
+    )
     
     # Add the vertical separator to the frame
-    ttk.Separator(master=tab3, orient='vertical').grid(row=tab3.h1_row, column=4, rowspan=21, sticky='nsw', pady=(4, 0))
+    ttk.Separator(master=input_frame_tab3, orient='vertical').grid(
+        row=input_frame_tab3.h1_row,
+        column=4,
+        rowspan=21,
+        sticky='nsw',
+        pady=(5, 0)
+    )
+
     
-    frame2 = tk.Frame(master=tab3)
-
-    txt_outStr2 = tk.Text(master=frame2, state=tk.DISABLED, height=10, fg='white', bg='black')
-    outStr_scroll2 = tk.Scrollbar(master=frame2, orient=tk.VERTICAL)
-
+    '''
+    # TEXT WIDGET FRAME
+    '''
+    
+    # Create the frame without fixed width and height
+    text_frame_tab3 = tk.Frame(master=tab3)
+    text_frame_tab3.grid(row=1, column=0, sticky='nsew', padx=5, pady=5)
+    text_frame_tab3.grid_propagate(True)  # Allow frame to resize based on content
+    
+    # Configure the grid in text_frame_tab3
+    text_frame_tab3.grid_rowconfigure(0, weight=1)  # Allow row 0 to expand
+    text_frame_tab3.grid_columnconfigure(0, weight=1)  # Allow column 0 (Text widget) to expand
+    text_frame_tab3.grid_columnconfigure(1, weight=0)  # Keep column 1 (Scrollbar) at a fixed size
+    
+    # Create the text widget and scrollbar
+    txt_outStr2 = tk.Text(master=text_frame_tab3, state=tk.DISABLED, fg='white', bg='black')
+    outStr_scroll2 = tk.Scrollbar(master=text_frame_tab3, orient=tk.VERTICAL)
+    
+    # Configure the scrollbar
     txt_outStr2.configure(yscrollcommand=outStr_scroll2.set)
     outStr_scroll2.config(command=txt_outStr2.yview)
-
-    txt_outStr2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    outStr_scroll2.pack(side=tk.LEFT, fill=tk.Y)
-
-    frame2.grid(row=tab3.out_row, column=0, columnspan=7, padx=5, pady=5, sticky='nsew')
-
+    
+    # Place the widgets using grid
+    txt_outStr2.grid(row=0, column=0, sticky='nsew')
+    outStr_scroll2.grid(row=0, column=1, sticky='ns')
+    
+    # Initialize the text logger
     text_logger2 = TextLogger(txt_outStr2)
-    
-    tab3.grid_rowconfigure(tab3.out_row, weight=1)
-    tab3.grid_columnconfigure(0, weight=1)
-    
+
     def start_incrementalsteptest():
         global_state.reset()
         ins_btn_run_rot.config(state=tk.DISABLED)
@@ -2431,6 +2578,38 @@ def UI():
         
         return new_folder_path
     
+    # PLOT FRAMES
+    plot_frame_width = 600
+    plot_frame_height = 1000
+
+    # Remove width and height, and grid_propagate(False)
+    plot_frame_tab3 = tk.Frame(master=tab3, width=plot_frame_width, height=plot_frame_height)
+    plot_frame_tab3.grid(row=0, column=1, rowspan=2, sticky='nsew')
+    plot_frame_tab3.grid_propagate(False)
+    
+    # Configure the frames to expand
+    plot_frame_tab3.grid_rowconfigure(0, weight=1)
+    plot_frame_tab3.grid_rowconfigure(1, weight=1)
+    plot_frame_tab3.grid_columnconfigure(0, weight=1)
+    
+# =============================================================================
+#     def resize_plot(event, figure, canvas):
+#         # Get the new size of the canvas
+#         width = event.width
+#         height = event.height
+#     
+#         # Calculate the figure size in inches
+#         dpi = figure.get_dpi()
+#         width_in = width / dpi
+#         height_in = height / dpi
+#     
+#         # Update the figure size
+#         figure.set_size_inches(width_in, height_in)
+#     
+#         # Redraw the canvas
+#         canvas.draw()
+# =============================================================================
+
     def ins_process_data():
         global html_file_path, ins_new_folder_path
         def next_function():
@@ -2493,11 +2672,11 @@ def UI():
             if extra_signal_var.get() == 'None':
                 extra_signal = 'None'
             elif extra_signal_var.get() == 'Position Error':
-                extra_signal = a1data.mode.pos_err
+                extra_signal = global_state.ins.pos_err
             elif extra_signal_var.get() == 'Position Command':
-                extra_signal = a1data.mode.pos_com
+                extra_signal = global_state.ins.pos_com
             elif extra_signal_var.get() == 'Position Feedback':
-                extra_signal = a1data.mode.pos_fbk
+                extra_signal = global_state.ins.pos_fbk
         
         lbl_extra_signal = tk.Label(analyze_window, text='Additional Signals To Plot')
         lbl_extra_signal.grid(row=5, column=0, padx=10, pady=10)
@@ -2516,89 +2695,79 @@ def UI():
     
             def plot_results():
                 global html_file_path, ins_new_folder_path
-                # Clear any existing plots
-                plt.clf()
-                
-                # Configure the figure size
-                #fig = plt.figure(figsize=(15, 3))  # Adjusted size to fit both plots vertically
+            
+                # Configure the figure size for matplotlib plots
                 plt.rcParams.update({'font.size': 11})
             
-                # Plotting the Staircase Plot
-                if ins_probe.get() == 'None':
-                    plt.ylabel('Position {}'.format(ins_err_unit.get()))
-                else:
-                    plt.ylabel('Analog Input {}'.format(ins_err_unit.get()))
+                # Define desired figure sizes in inches
+                stair_width = 6
+                stair_height = 2
+                step_width = 6
+                step_height = 2
             
-                # Using parent plot method
+                # Create a figure and axes for the staircase plot
+                stair_fig, stair_ax = plt.subplots(figsize=(stair_width, stair_height))  # Create figure with specified size
+            
+                # Plotting the Staircase Plot using raw data
                 if extra_signal_var.get() == 'None':
                     if ins_probe.get() == 'None':
-                        stair_plt = super(incremental_step, global_state.ins).plot(a1data.mode.pos_fbk)
+                        stair_ax.plot(global_state.ins.time_array, global_state.ins.pos_fbk, label='Position Feedback')  # Plot Position Feedback
                     else:
-                        stair_plt = super(incremental_step, global_state.ins).plot(a1data.mode.ai0)
+                        stair_ax.plot(global_state.ins.time_array, global_state.ins.ai0, label='Analog Input')  # Plot Analog Input
                 else:
                     if ins_probe.get() == 'None':
-                        stair_plt = super(incremental_step, global_state.ins).plot(a1data.mode.pos_fbk)
-                        stair_plt = super(incremental_step, global_state.ins).plot(extra_signal)
+                        stair_ax.plot(global_state.ins.time_array, global_state.ins.pos_fbk, label='Position Feedback')  # Plot Position Feedback
+                        stair_ax.plot(global_state.ins.time_array, extra_signal, label='Extra Signal')  # Plot Extra Signal
                     else:
-                        stair_plt = super(incremental_step, global_state.ins).plot(a1data.mode.ai0)
-                        stair_plt = super(incremental_step, global_state.ins).plot(extra_signal)
-                
-                # Check if stair_plt is None and create a default figure if necessary
-                if stair_plt is None:
-                    stair_plt = plt.gcf()  # Get the current figure
-                
-                # Using child plot method for the second plot
-                step_plt = global_state.ins.plot(legend_loc='upper right', step_num=step_num_var.get(), fig_size=(8, 4))
-                
-                # Check if step_plt is None and create a default figure if necessary
-                if step_plt is None:
-                    step_plt = plt.figure(figsize=(10, 5))
-                
-                # Create frames for each plot
-                stair_plot_frame = tk.Frame(master=tab3)
-                stair_plot_frame.grid(row=tab3.h0_row, rowspan=9, column=4, columnspan=3, padx=(3,0), pady=(15,0), sticky='nsew')
+                        stair_ax.plot(global_state.ins.time_array, global_state.ins.ai0, label='Analog Input')  # Plot Analog Input
+                        stair_ax.plot(global_state.ins.time_array, extra_signal, label='Extra Signal')  # Plot Extra Signal
             
-                step_plot_frame = tk.Frame(master=tab3)
-                step_plot_frame.grid(row=tab3.ramp_v_row, rowspan=12, column=4, columnspan=3, padx=(3,0), pady=(0,0), sticky='nsew')
+                # Set labels and legends
+                stair_ax.set_xlabel('Time (seconds)')
+                stair_ax.set_ylabel('Position (deg)' if ins_probe.get() == 'None' else 'Analog Input (units)')
+                stair_ax.legend()
             
-                # Make frames responsive
-                tab3.grid_rowconfigure(tab3.h0_row, weight=1)
-                tab3.grid_rowconfigure(tab3.num_step_row, weight=1)
-                tab3.grid_columnconfigure(4, weight=1)
+                # Create figure and axes for the step plot
+                step_fig, step_ax = plt.subplots(figsize=(step_width, step_height))  # Create another figure with specified size
+            
+                # Plotting the Step Plot using the global_state.ins data
+                global_state.ins.plot(legend_loc='upper right', step_num=step_num_var.get(), ax=step_ax)  # Using existing plot method
             
                 # Embed the plots in Tkinter canvas
-                embed_plot_in_canvas(stair_plt, step_plt, stair_plot_frame, step_plot_frame)
-                
+                embed_plot_in_canvas(stair_fig, step_fig, plot_frame_tab3)
+            
+                # Continue with the rest of the function
                 ins_new_folder_path = ins_PDF_save_path()
                 global_state.ins.plot_to_plotly(ins_new_folder_path, sys_serial=ins_sys.get(), step_num=step_num_var.get(), legend_loc='upper right', legend_size=7)
-                
-            def embed_plot_in_canvas(stair_plot, step_plot, stair_canvas_frame, step_canvas_frame):
+            
+            def embed_plot_in_canvas(stair_plot, step_plot, canvas_frame):
                 # Clear any existing plots in the frames
-                for widget in stair_canvas_frame.winfo_children():
+                for widget in canvas_frame.winfo_children():
                     widget.destroy()
-                for widget in step_canvas_frame.winfo_children():
+                for widget in canvas_frame.winfo_children():
                     widget.destroy()
             
-                # Embed the first plot in the Tkinter canvas
-                stair_canvas = FigureCanvasTkAgg(stair_plot, master=stair_canvas_frame)
+                # Embed the first plot (stair plot) in the Tkinter canvas in row 0
+                stair_canvas = FigureCanvasTkAgg(stair_plot, master=canvas_frame)
                 stair_canvas.draw()
-                stair_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+                stair_canvas.get_tk_widget().grid(row=0, column=0, pady=(10,0), sticky='nsew')  # Use grid for precise placement
             
-                # Embed the second plot in the Tkinter canvas
-                step_canvas = FigureCanvasTkAgg(step_plot, master=step_canvas_frame)
+                # Embed the second plot (step plot) in the Tkinter canvas in row 1
+                step_canvas = FigureCanvasTkAgg(step_plot, master=canvas_frame)
                 step_canvas.draw()
-                step_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+                step_canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew')  # Use grid for precise placement
+
+                # If you do not want the plots to resize dynamically, do not bind resize events
+                # stair_canvas_frame.bind('<Configure>', lambda event: resize_plot(event, stair_plot, stair_canvas))
+                # step_canvas_frame.bind('<Configure>', lambda event: resize_plot(event, step_plot, step_canvas))
+
             
-                # Make the plots responsive
-                stair_canvas_frame.bind('<Configure>', lambda event: resize_plot(event, stair_plot, stair_canvas))
-                step_canvas_frame.bind('<Configure>', lambda event: resize_plot(event, step_plot, step_canvas))
+# =============================================================================
+#                 # Make the plots responsive
+#                 stair_canvas_frame.bind('<Configure>', lambda event: resize_plot(event, stair_plot, stair_canvas))
+#                 step_canvas_frame.bind('<Configure>', lambda event: resize_plot(event, step_plot, step_canvas))
+# =============================================================================
             
-            def resize_plot(event, plot, canvas):
-                # Adjust the plot size dynamically based on the frame size
-                width = event.width / 100  # Convert from pixels to inches
-                height = event.height / 100
-                plot.set_size_inches(width, height)
-                canvas.draw()
             
             def criteria():
                 global ins_new_folder_path
@@ -2917,167 +3086,167 @@ def UI():
         return None  # If not found, return None or handle it as needed
     
     # Create the UI elements and assign the stored values
-    ins_lbl_test = tk.Label(master=tab3, text="Select Test Type:")
-    ins_lbl_test.grid(row=tab3.tt_row, column=0, padx=5, pady=5)
+    ins_lbl_test = tk.Label(master=input_frame_tab3, text="Select Test Type:")
+    ins_lbl_test.grid(row=input_frame_tab3.tt_row, column=0, padx=5, pady=5)
 
     ins_direction = tk.StringVar(value=0)
-    ins_uni_dir = tk.Radiobutton(master=tab3, text="Unidirectional", variable=ins_direction, value="uni", command=ins_test_type_def)
-    ins_uni_dir.grid(row=tab3.tt_row, column=1, padx=5, pady=5)
+    ins_uni_dir = tk.Radiobutton(master=input_frame_tab3, text="Unidirectional", variable=ins_direction, value="uni", command=ins_test_type_def)
+    ins_uni_dir.grid(row=input_frame_tab3.tt_row, column=1, padx=5, pady=5)
 
-    ins_bi_dir = tk.Radiobutton(master=tab3, text="Bidirectional", variable=ins_direction, value="bi", command=ins_test_type_def)
-    ins_bi_dir.grid(row=tab3.tt_row, column=2, padx=5, pady=5)
+    ins_bi_dir = tk.Radiobutton(master=input_frame_tab3, text="Bidirectional", variable=ins_direction, value="bi", command=ins_test_type_def)
+    ins_bi_dir.grid(row=input_frame_tab3.tt_row, column=2, padx=5, pady=5)
     
-    ins_lbl_axis = tk.Label(master=tab3, text="Axis Name", width=25, height=1)
-    ins_lbl_axis.grid(row=tab3.axis_row, column=0, padx=5, pady=5)
+    ins_lbl_axis = tk.Label(master=input_frame_tab3, text="Axis Name", width=25, height=1)
+    ins_lbl_axis.grid(row=input_frame_tab3.axis_row, column=0, padx=5, pady=5)
 
     ins_axis = tk.StringVar(value=ins_axis_value)
-    ins_ent_axis = tk.Entry(master=tab3, textvariable=ins_axis, width=25)
-    ins_ent_axis.grid(row=tab3.axis_row, column=1, padx=5, pady=5)
+    ins_ent_axis = tk.Entry(master=input_frame_tab3, textvariable=ins_axis, width=25)
+    ins_ent_axis.grid(row=input_frame_tab3.axis_row, column=1, padx=5, pady=5)
 
-    ins_lbl_st = tk.Label(master=tab3, text="Start Position", width=25, height=1)
-    ins_lbl_st.grid(row=tab3.start_row, column=0, padx=5, pady=5)
+    ins_lbl_st = tk.Label(master=input_frame_tab3, text="Start Position", width=25, height=1)
+    ins_lbl_st.grid(row=input_frame_tab3.start_row, column=0, padx=5, pady=5)
 
     ins_start = tk.DoubleVar(value=ins_start_value)
-    ins_ent_start_pos = tk.Entry(master=tab3, textvariable=ins_start, width=25)
-    ins_ent_start_pos.grid(row=tab3.start_row, column=1, padx=5, pady=5)
+    ins_ent_start_pos = tk.Entry(master=input_frame_tab3, textvariable=ins_start, width=25)
+    ins_ent_start_pos.grid(row=input_frame_tab3.start_row, column=1, padx=5, pady=5)
     
-    ins_lbl_step_size = tk.Label(master=tab3, text="Step Size", width=25, height=1)
-    ins_lbl_step_size.grid(row=tab3.step_row, column=0, padx=5, pady=5)
+    ins_lbl_step_size = tk.Label(master=input_frame_tab3, text="Step Size", width=25, height=1)
+    ins_lbl_step_size.grid(row=input_frame_tab3.step_row, column=0, padx=5, pady=5)
 
     ins_step = tk.DoubleVar(value=ins_step_value)
-    ins_ent_step_size = tk.Entry(master=tab3, textvariable=ins_step, width=25)
-    ins_ent_step_size.grid(row=tab3.step_row, column=1, padx=5, pady=5)
+    ins_ent_step_size = tk.Entry(master=input_frame_tab3, textvariable=ins_step, width=25)
+    ins_ent_step_size.grid(row=input_frame_tab3.step_row, column=1, padx=5, pady=5)
     
-    ins_lbl_num_step = tk.Label(master=tab3, text="Number of Steps", width=25, height=1)
-    ins_lbl_num_step.grid(row=tab3.num_step_row, column=0, padx=5, pady=5)
+    ins_lbl_num_step = tk.Label(master=input_frame_tab3, text="Number of Steps", width=25, height=1)
+    ins_lbl_num_step.grid(row=input_frame_tab3.num_step_row, column=0, padx=5, pady=5)
 
     ins_num_step = tk.DoubleVar(value=ins_num_step_value)
-    ins_ent_num_step = tk.Entry(master=tab3, textvariable=ins_num_step, width=25)
-    ins_ent_num_step.grid(row=tab3.num_step_row, column=1, padx=5, pady=5)
+    ins_ent_num_step = tk.Entry(master=input_frame_tab3, textvariable=ins_num_step, width=25)
+    ins_ent_num_step.grid(row=input_frame_tab3.num_step_row, column=1, padx=5, pady=5)
 
-    ins_lbl_speed = tk.Label(master=tab3, text="Velocity", width=25, height=1)
-    ins_lbl_speed.grid(row=tab3.speed_row, column=0, padx=5, pady=5)
+    ins_lbl_speed = tk.Label(master=input_frame_tab3, text="Velocity", width=25, height=1)
+    ins_lbl_speed.grid(row=input_frame_tab3.speed_row, column=0, padx=5, pady=5)
 
     ins_speed_ = tk.StringVar(value=ins_speed_value)
-    ins_ent_speed = tk.Entry(master=tab3, textvariable=ins_speed_, width=25)
-    ins_ent_speed.grid(row=tab3.speed_row, column=1, padx=5, pady=5)
+    ins_ent_speed = tk.Entry(master=input_frame_tab3, textvariable=ins_speed_, width=25)
+    ins_ent_speed.grid(row=input_frame_tab3.speed_row, column=1, padx=5, pady=5)
 
-    ins_lbl_ramp_rate = tk.Label(master=tab3, text="Ramp Rate")
-    ins_lbl_ramp_rate.grid(row=tab3.ramp_v_row, column=0, padx=5, pady=5)
+    ins_lbl_ramp_rate = tk.Label(master=input_frame_tab3, text="Ramp Rate")
+    ins_lbl_ramp_rate.grid(row=input_frame_tab3.ramp_v_row, column=0, padx=5, pady=5)
 
     ins_ramp_v = tk.StringVar(value=ins_ramp_v_value)
-    ins_ent_ramp_rate = tk.Entry(master=tab3, textvariable=ins_ramp_v, width=25)
-    ins_ent_ramp_rate.grid(row=tab3.ramp_v_row, column=1, padx=5, pady=5)
+    ins_ent_ramp_rate = tk.Entry(master=input_frame_tab3, textvariable=ins_ramp_v, width=25)
+    ins_ent_ramp_rate.grid(row=input_frame_tab3.ramp_v_row, column=1, padx=5, pady=5)
     
-    ins_lbl_dwell = tk.Label(master=tab3, text="Dwell")
-    ins_lbl_dwell.grid(row=tab3.dwell_row, column=0, padx=5, pady=5)
+    ins_lbl_dwell = tk.Label(master=input_frame_tab3, text="Dwell")
+    ins_lbl_dwell.grid(row=input_frame_tab3.dwell_row, column=0, padx=5, pady=5)
 
     ins_dwell = tk.StringVar(value=ins_dwell_value)
-    ins_ent_dwell = tk.Entry(master=tab3, textvariable=ins_dwell, width=25)
-    ins_ent_dwell.grid(row=tab3.dwell_row, column=1, padx=5, pady=5)
+    ins_ent_dwell = tk.Entry(master=input_frame_tab3, textvariable=ins_dwell, width=25)
+    ins_ent_dwell.grid(row=input_frame_tab3.dwell_row, column=1, padx=5, pady=5)
 
-    ins_lbl_jitter = tk.Label(master=tab3, text="Jitter")
-    ins_lbl_jitter.grid(row=tab3.ipj_row, column=0, padx=5, pady=5)
+    ins_lbl_jitter = tk.Label(master=input_frame_tab3, text="Jitter")
+    ins_lbl_jitter.grid(row=input_frame_tab3.ipj_row, column=0, padx=5, pady=5)
 
     ins_ipj = tk.DoubleVar(value=ins_ipj_value)
-    ins_ent_jitter = tk.Entry(master=tab3, textvariable=ins_ipj, width=25)
-    ins_ent_jitter.grid(row=tab3.ipj_row, column=1, padx=5, pady=5)
+    ins_ent_jitter = tk.Entry(master=input_frame_tab3, textvariable=ins_ipj, width=25)
+    ins_ent_jitter.grid(row=input_frame_tab3.ipj_row, column=1, padx=5, pady=5)
     
-    ins_lbl_sig = tk.Label(master=tab3, text="Signal", width=25, height=1)
-    ins_lbl_sig.grid(row=tab3.axis_row, column=2, padx=5, pady=5)
+    ins_lbl_sig = tk.Label(master=input_frame_tab3, text="Signal", width=25, height=1)
+    ins_lbl_sig.grid(row=input_frame_tab3.axis_row, column=2, padx=5, pady=5)
     
     ins_signal_var = tk.StringVar(value=ins_signal_value)
     ins_signal_var.trace_add('write', ins_signal_def)
     ins_signal_options = ['Encoder', 'Capacitance Probe']
-    ins_signal_menu = tk.OptionMenu(tab3, ins_signal_var, *ins_signal_options)
-    ins_signal_menu.grid(row=tab3.start_row, column=2, padx=5, pady=5)
+    ins_signal_menu = tk.OptionMenu(input_frame_tab3, ins_signal_var, *ins_signal_options)
+    ins_signal_menu.grid(row=input_frame_tab3.start_row, column=2, padx=5, pady=5)
     
-    ins_lbl_probe = tk.Label(master=tab3, text="Probe Axis", width=25, height=1,state=tk.DISABLED)
-    ins_lbl_probe.grid(row=tab3.axis_row, column=3, padx=5, pady=5)
+    ins_lbl_probe = tk.Label(master=input_frame_tab3, text="Probe Axis", width=25, height=1,state=tk.DISABLED)
+    ins_lbl_probe.grid(row=input_frame_tab3.axis_row, column=3, padx=5, pady=5)
 
     ins_probe = tk.StringVar(value=ins_probe_value)
-    ins_ent_probe = tk.Entry(master=tab3, textvariable=ins_probe, width=25,state=tk.DISABLED)
-    ins_ent_probe.grid(row=tab3.start_row, column=3, padx=5, pady=5)
+    ins_ent_probe = tk.Entry(master=input_frame_tab3, textvariable=ins_probe, width=25,state=tk.DISABLED)
+    ins_ent_probe.grid(row=input_frame_tab3.start_row, column=3, padx=5, pady=5)
     
-    ins_lbl_sens = tk.Label(master=tab3, text="Scale Factor (User Units)", width=25, height=1,state=tk.DISABLED)
-    ins_lbl_sens.grid(row=tab3.step_row, column=3, padx=5, pady=5)
+    ins_lbl_sens = tk.Label(master=input_frame_tab3, text="Scale Factor (User Units)", width=25, height=1,state=tk.DISABLED)
+    ins_lbl_sens.grid(row=input_frame_tab3.step_row, column=3, padx=5, pady=5)
 
     ins_sens = tk.StringVar(value=ins_sens_value)
-    ins_ent_sens = tk.Entry(master=tab3, textvariable=ins_sens, width=25,state=tk.DISABLED)
-    ins_ent_sens.grid(row=tab3.num_step_row, column=3, padx=5, pady=5)
+    ins_ent_sens = tk.Entry(master=input_frame_tab3, textvariable=ins_sens, width=25,state=tk.DISABLED)
+    ins_ent_sens.grid(row=input_frame_tab3.num_step_row, column=3, padx=5, pady=5)
     
-    ins_lbl_sample = tk.Label(master=tab3, text="Sample Rate:", width=25, height=1,state=tk.DISABLED)
-    ins_lbl_sample.grid(row=tab3.speed_row, column=3, padx=5, pady=5)
+    ins_lbl_sample = tk.Label(master=input_frame_tab3, text="Sample Rate:", width=25, height=1,state=tk.DISABLED)
+    ins_lbl_sample.grid(row=input_frame_tab3.speed_row, column=3, padx=5, pady=5)
     
     ins_sample_options = [('1 kHz', 1000), ('10 kHz', 10000), ('20 kHz', 20000), ('100 kHz', 100000), ('200 kHz', 200000)]
     ins_samp = tk.StringVar(value=ins_sample_value)
-    ins_sample_menu = tk.OptionMenu(tab3, ins_samp, *[option[0] for option in ins_sample_options])
+    ins_sample_menu = tk.OptionMenu(input_frame_tab3, ins_samp, *[option[0] for option in ins_sample_options])
     ins_sample_menu.configure(state=tk.DISABLED)
-    ins_sample_menu.grid(row=tab3.ramp_v_row, column=3, padx=5, pady=5)
+    ins_sample_menu.grid(row=input_frame_tab3.ramp_v_row, column=3, padx=5, pady=5)
     
-    ins_lbl_units = tk.Label(master=tab3, text="Units:", width=25, height=1)
-    ins_lbl_units.grid(row=tab3.step_row, column=2, padx=5, pady=5)
+    ins_lbl_units = tk.Label(master=input_frame_tab3, text="Units:", width=25, height=1)
+    ins_lbl_units.grid(row=input_frame_tab3.step_row, column=2, padx=5, pady=5)
     
     ins_unit_options = ['mm', 'um', 'nm', 'deg']
     ins_unit = tk.StringVar(value=ins_unit_value)
-    ins_unit_menu = tk.OptionMenu(tab3, ins_unit, *ins_unit_options)
-    ins_unit_menu.grid(row=tab3.num_step_row, column=2, padx=5, pady=5)
+    ins_unit_menu = tk.OptionMenu(input_frame_tab3, ins_unit, *ins_unit_options)
+    ins_unit_menu.grid(row=input_frame_tab3.num_step_row, column=2, padx=5, pady=5)
     
-    ins_lbl_err_units = tk.Label(master=tab3, text="Error Units:", width=25, height=1)
-    ins_lbl_err_units.grid(row=tab3.speed_row, column=2, padx=5, pady=5)
+    ins_lbl_err_units = tk.Label(master=input_frame_tab3, text="Error Units:", width=25, height=1)
+    ins_lbl_err_units.grid(row=input_frame_tab3.speed_row, column=2, padx=5, pady=5)
     
     ins_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'deg']
     ins_err_unit = tk.StringVar(value=ins_err_unit_value)
-    ins_err_unit_menu = tk.OptionMenu(tab3, ins_err_unit, *ins_err_unit_options)
-    ins_err_unit_menu.grid(row=tab3.ramp_v_row, column=2, padx=5, pady=5)
+    ins_err_unit_menu = tk.OptionMenu(input_frame_tab3, ins_err_unit, *ins_err_unit_options)
+    ins_err_unit_menu.grid(row=input_frame_tab3.ramp_v_row, column=2, padx=5, pady=5)
     
-    ins_lbl_settle = tk.Label(master=tab3, text="Settle Time")
-    ins_lbl_settle.grid(row=tab3.ipj_row, column=2, padx=5, pady=5)
+    ins_lbl_settle = tk.Label(master=input_frame_tab3, text="Settle Time")
+    ins_lbl_settle.grid(row=input_frame_tab3.ipj_row, column=2, padx=5, pady=5)
 
     ins_settle = tk.DoubleVar(value=ins_settle_value)
-    ins_ent_settle = tk.Entry(master=tab3, textvariable=ins_settle, width=25)
-    ins_ent_settle.grid(row=tab3.ipj_row, column=3, padx=5, pady=5)
+    ins_ent_settle = tk.Entry(master=input_frame_tab3, textvariable=ins_settle, width=25)
+    ins_ent_settle.grid(row=input_frame_tab3.ipj_row, column=3, padx=5, pady=5)
 
-    ins_lbl_serial = tk.Label(master=tab3, text="System Serial Number", width=25, height=1)
-    ins_lbl_serial.grid(row=tab3.sys_row, column=0, padx=5, pady=5)
+    ins_lbl_serial = tk.Label(master=input_frame_tab3, text="System Serial Number", width=25, height=1)
+    ins_lbl_serial.grid(row=input_frame_tab3.sys_row, column=0, padx=5, pady=5)
 
     ins_sys = tk.StringVar(value=ins_sys_value)
-    ins_ent_serial = tk.Entry(master=tab3, textvariable=ins_sys, width=25)
-    ins_ent_serial.grid(row=tab3.sys_row, column=1, columnspan=3, padx=5, pady=5)
+    ins_ent_serial = tk.Entry(master=input_frame_tab3, textvariable=ins_sys, width=25)
+    ins_ent_serial.grid(row=input_frame_tab3.sys_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ins_lbl_st_model = tk.Label(master=tab3, text="Part Number", width=25, height=1)
-    ins_lbl_st_model.grid(row=tab3.st_row, column=0, padx=5, pady=5)
+    ins_lbl_st_model = tk.Label(master=input_frame_tab3, text="Part Number", width=25, height=1)
+    ins_lbl_st_model.grid(row=input_frame_tab3.st_row, column=0, padx=5, pady=5)
 
     ins_st = tk.StringVar(value=ins_st_value)
-    ins_ent_st_model = tk.Entry(master=tab3, textvariable=ins_st, width=25)
-    ins_ent_st_model.grid(row=tab3.st_row, column=1, columnspan=3, padx=5, pady=5)
+    ins_ent_st_model = tk.Entry(master=input_frame_tab3, textvariable=ins_st, width=25)
+    ins_ent_st_model.grid(row=input_frame_tab3.st_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ins_lbl_op = tk.Label(master=tab3, text="Operator", width=25, height=1)
-    ins_lbl_op.grid(row=tab3.op_row, column=0, padx=5, pady=5)
+    ins_lbl_op = tk.Label(master=input_frame_tab3, text="Operator", width=25, height=1)
+    ins_lbl_op.grid(row=input_frame_tab3.op_row, column=0, padx=5, pady=5)
 
     ins_opName = tk.StringVar(value=ins_opName_value)
-    ins_ent_op = tk.Entry(master=tab3, textvariable=ins_opName, width=25)
-    ins_ent_op.grid(row=tab3.op_row, column=1, columnspan=3, padx=5, pady=5)
+    ins_ent_op = tk.Entry(master=input_frame_tab3, textvariable=ins_opName, width=25)
+    ins_ent_op.grid(row=input_frame_tab3.op_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ins_lbl_temp = tk.Label(master=tab3, text="Temp", width=25, height=1)
-    ins_lbl_temp.grid(row=tab3.temp_row, column=0, padx=5, pady=5)
+    ins_lbl_temp = tk.Label(master=input_frame_tab3, text="Temp", width=25, height=1)
+    ins_lbl_temp.grid(row=input_frame_tab3.temp_row, column=0, padx=5, pady=5)
 
     ins_temp = tk.DoubleVar(value=ins_temp_value)
-    ins_ent_temp = tk.Entry(master=tab3, textvariable=ins_temp, width=25)
-    ins_ent_temp.grid(row=tab3.temp_row, column=1, columnspan=3, padx=5, pady=5)
+    ins_ent_temp = tk.Entry(master=input_frame_tab3, textvariable=ins_temp, width=25)
+    ins_ent_temp.grid(row=input_frame_tab3.temp_row, column=1, columnspan=3, padx=5, pady=5)
 
-    ins_lbl_comments = tk.Label(master=tab3, text="Comments", width=25, height=1)
-    ins_lbl_comments.grid(row=tab3.com_row, column=0, padx=5, pady=5)
+    ins_lbl_comments = tk.Label(master=input_frame_tab3, text="Comments", width=25, height=1)
+    ins_lbl_comments.grid(row=input_frame_tab3.com_row, column=0, padx=5, pady=5)
 
     ins_comm = tk.StringVar(value=ins_comm_value)
-    ins_ent_comments = tk.Entry(master=tab3, textvariable=ins_comm, width=25)
-    ins_ent_comments.grid(row=tab3.com_row, column=1, columnspan=3, padx=5, pady=5)
+    ins_ent_comments = tk.Entry(master=input_frame_tab3, textvariable=ins_comm, width=25)
+    ins_ent_comments.grid(row=input_frame_tab3.com_row, column=1, columnspan=3, padx=5, pady=5)
 
-    btn_import_rot = tk.Button(master=tab3, text="Import Data", width=30, height=1, command=import_ins_data)
-    btn_import_rot.grid(row=tab3.run_row, column=1, padx=5, pady=5)
+    btn_import_rot = tk.Button(master=input_frame_tab3, text="Import Data", width=30, height=1, command=import_ins_data)
+    btn_import_rot.grid(row=input_frame_tab3.run_row, column=1, padx=5, pady=5)
 
-    ins_btn_run_rot = tk.Button(master=tab3, text="Run", width=25, height=1, command=start_incrementalsteptest)
-    ins_btn_run_rot.grid(row=tab3.run_row, column=0, padx=5, pady=5)
+    ins_btn_run_rot = tk.Button(master=input_frame_tab3, text="Run", width=25, height=1, command=start_incrementalsteptest)
+    ins_btn_run_rot.grid(row=input_frame_tab3.run_row, column=0, padx=5, pady=5)
     
     def on_closing():
         global window_open

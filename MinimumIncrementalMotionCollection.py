@@ -502,7 +502,7 @@ class incremental_step(a1data.a1data):
         legend_loc = kwargs['legend_loc']
         legend_size = kwargs['legend_size']
         fig_size = kwargs['fig_size']
-    
+        
         # Determine step label for the title
         if (self.direction == a1data.mode.Bidirectional) & (step_num > self.num_steps):
             step_label = 'Reverse Step {}'.format(step_num - self.num_steps)
@@ -584,9 +584,15 @@ class incremental_step(a1data.a1data):
         blank_ms = ax.annotate('    ', xy=(self.time_array[time_markers[1]], avg_time_y_coords),
                                xycoords="data", va="center", ha="center", size=10) 
     
-        if fig:  # Only draw the canvas if a new figure was created
-            fig.canvas.draw()
+        # Ensure the figure has a canvas
+        if fig.canvas is None:
+            from matplotlib.backends.backend_agg import FigureCanvasAgg
+            fig.set_canvas(FigureCanvasAgg(fig))
     
+        # Force the canvas to draw to initialize the renderer
+        fig.canvas.draw()
+    
+        # Now it's safe to call get_window_extent()
         bbox_avg = blank_avg.get_window_extent().transformed(ax.transData.inverted())
         bbox_ms = blank_ms.get_window_extent().transformed(ax.transData.inverted())
     
