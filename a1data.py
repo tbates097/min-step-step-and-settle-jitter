@@ -236,11 +236,22 @@ class a1data(ABC):
                 self.ai0 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis).points
             ##########TB
             conversion_factors = {
-                ('mm', 'nm'): 1000000,
-                ('mm', 'um'): 1000,
-                ('um', 'nm'): 1000,
+                # Length units
+                ('mm', 'nm'): 1_000_000,
+                ('mm', 'um'): 1_000,
+                ('um', 'nm'): 1_000,
                 ('um', 'um'): 1,
-                ('deg', 'arcsec'): 3600,
+                
+                # Angular units
+                ('deg', 'arcsec'): 3_600,
+                ('arcsec', 'deg'): 1/3_600,
+                ('deg', 'μrad'): 17_453.29252,
+                ('μrad', 'deg'): 1/17_453.29252,
+                ('arcsec', 'μrad'): 4.848136811,
+                ('μrad', 'arcsec'): 1/4.848136811,
+                ('μrad', 'μrad'): 1,
+                ('deg', 'deg'): 1,
+                ('arcsec', 'arcsec'): 1,
             }
             
             conversion_factor = conversion_factors.get((self.units, self.error_units))
@@ -344,11 +355,22 @@ class a1data(ABC):
             
 
             conversion_factors = {
-                ('mm', 'nm'): 1000000,
-                ('mm', 'um'): 1000,
-                ('um', 'nm'): 1000,
+                # Length units
+                ('mm', 'nm'): 1_000_000,
+                ('mm', 'um'): 1_000,
+                ('um', 'nm'): 1_000,
                 ('um', 'um'): 1,
-                ('deg', 'arcsec'): 3600,
+                
+                # Angular units
+                ('deg', 'arcsec'): 3_600,
+                ('arcsec', 'deg'): 1/3_600,
+                ('deg', 'μrad'): 17_453.29252,
+                ('μrad', 'deg'): 1/17_453.29252,
+                ('arcsec', 'μrad'): 4.848136811,
+                ('μrad', 'arcsec'): 1/4.848136811,
+                ('μrad', 'μrad'): 1,
+                ('deg', 'deg'): 1,
+                ('arcsec', 'arcsec'): 1,
             }
             
             conversion_factor = conversion_factors.get((self.units, self.error_units))

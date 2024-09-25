@@ -2044,7 +2044,7 @@ def UI():
     ipj_lbl_units = tk.Label(master=input_frame_tab2, text="Units:", width=25, height=1)
     ipj_lbl_units.grid(row=input_frame_tab2.units_row, column=0, padx=5, pady=5)
     
-    ipj_unit_options = ['mm', 'um', 'nm', 'deg']
+    ipj_unit_options = ['mm', 'um', 'nm', 'urad', 'deg']
     ipj_unit = tk.StringVar(value=ipj_unit_value)
     ipj_unit_menu = tk.OptionMenu(input_frame_tab2, ipj_unit, *ipj_unit_options)
     ipj_unit_menu.grid(row=input_frame_tab2.units_row, column=1, padx=5, pady=5)
@@ -3195,7 +3195,7 @@ def UI():
     ins_lbl_err_units = tk.Label(master=input_frame_tab3, text="Error Units:", width=25, height=1)
     ins_lbl_err_units.grid(row=input_frame_tab3.speed_row, column=2, padx=5, pady=5)
     
-    ins_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'deg']
+    ins_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'urad', 'deg']
     ins_err_unit = tk.StringVar(value=ins_err_unit_value)
     ins_err_unit_menu = tk.OptionMenu(input_frame_tab3, ins_err_unit, *ins_err_unit_options)
     ins_err_unit_menu.grid(row=input_frame_tab3.ramp_v_row, column=2, padx=5, pady=5)
