@@ -548,20 +548,20 @@ def UI():
                 except:
                     messagebox.showerror('No Device', 'No Devices Present. Check Connections.')
 
-            global_state.ms = move_and_settle(axis, sample_rate, step_size, [start_pos, end_pos], probe_axis, 
-                                              direction=ms_dir, 
-                                              speed=speed, 
-                                              num_cycles=num_cycles, 
-                                              dwell=dwell, 
-                                              ramp_value=ramp_value,
-                                              ramp_type = a1.RampType.SCurve,
-                                              units=units,
-                                              error_units=error_units,
-                                              folder=folder,
-                                              import_data=False,
-                                              text_widget=txt_outStr
-                                            )
-            global_state.ms.test(controller)
+        global_state.ms = move_and_settle(axis, sample_rate, step_size, [start_pos, end_pos], probe_axis, 
+                                          direction=ms_dir, 
+                                          speed=speed, 
+                                          num_cycles=num_cycles, 
+                                          dwell=dwell, 
+                                          ramp_value=ramp_value,
+                                          ramp_type = a1.RampType.SCurve,
+                                          units=units,
+                                          error_units=error_units,
+                                          folder=folder,
+                                          import_data=False,
+                                          text_widget=txt_outStr
+                                        )
+        global_state.ms.test(controller)
             
     def import_ms_data():
         syst.stdout = text_logger
@@ -1466,11 +1466,11 @@ def UI():
                 except:
                     messagebox.showerror('No Device', 'No Devices Present. Check Connections.')
             
-            global_state.ipj = jitter(Axis, SamplingRate, TestTime, Direction, 
-                                      Sensitivity, ProbeAxis, units = ipj_unit.get(),
-                                      error_units = ipj_err_unit.get(), import_data=False, text_widget=txt_outStr1
-                                            )
-            global_state.ipj.test(controller)
+        global_state.ipj = jitter(Axis, SamplingRate, TestTime, Direction, 
+                                  Sensitivity, ProbeAxis, units = ipj_unit.get(),
+                                  error_units = ipj_err_unit.get(), import_data=False, text_widget=txt_outStr1
+                                        )
+        global_state.ipj.test(controller)
             
     def import_ipj_data():
         syst.stdout = text_logger1
@@ -2409,18 +2409,18 @@ def UI():
                 except:
                     messagebox.showerror('No Device', 'No Devices Present. Check Connections.')
 
-            global_state.ins = incremental_step(axis, sample_rate, step_size, s, t_ms, sensitivity, probe_axis, num_steps,
-                                              units=units,
-                                              error_units=error_units,
-                                              direction=ins_dir, 
-                                              t_ave=t_ave,
-                                              start_pos=start_pos,
-                                              speed=speed, 
-                                              ramp_value=ramp_value,
-                                              import_data=False,
-                                              text_widget=txt_outStr2
-                                              )
-            global_state.ins.test(controller)
+        global_state.ins = incremental_step(axis, sample_rate, step_size, s, t_ms, sensitivity, probe_axis, num_steps,
+                                          units=units,
+                                          error_units=error_units,
+                                          direction=ins_dir, 
+                                          t_ave=t_ave,
+                                          start_pos=start_pos,
+                                          speed=speed, 
+                                          ramp_value=ramp_value,
+                                          import_data=False,
+                                          text_widget=txt_outStr2
+                                          )
+        global_state.ins.test(controller)
             
     def import_ins_data():
         syst.stdout = text_logger2
