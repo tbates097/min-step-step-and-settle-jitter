@@ -1,12 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## 1.1.0 - 2024-09-06
+## 1.1.0 - 2024-09-24
 
 ### Added
 - Functionality to report units in microradians for the Jitter and Min Step tests.
 
-## 1.0.1 - 2024-09-06
+## 1.0.1 - 2024-09-16
 
 ### Fixed
 - Fixed embedded plot formatting issues when run from a .bat file.
