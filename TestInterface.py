@@ -317,6 +317,7 @@ def UI():
     ipj_axis_value = stored_data.get("ipj_axis_name", "X")
     ipj_signal_value = stored_data.get("ipj_signal",'Encoder')
     ipj_probe_value = stored_data.get("ipj_probe_axis", 'None')
+    ipj_probe_dist_value = stored_data.get('ipj_probe_dist',0)
     ipj_sens_value = stored_data.get("ipj_scale factor (user units)", '0.0025')
     ipj_unit_value = stored_data.get("ipj_units", 'mm')
     ipj_err_unit_value = stored_data.get("ipj_error_units", 'mm')
@@ -335,6 +336,7 @@ def UI():
     ins_step_value = stored_data.get("ins_step_size", 0.00005)
     ins_num_step_value = stored_data.get("ins_num_step", 5)
     ins_probe_value = stored_data.get("ins_probe_axis", 'None')
+    ins_probe_dist_value = stored_data.get("ins_probe_dist", 0)
     ins_sens_value = stored_data.get("ins_scale factor (user units)", '0.0025')
     ins_speed_value = stored_data.get("ins_speed", 5)
     ins_ramp_v_value = stored_data.get("ins_ramp_rate", 1000)
@@ -1168,15 +1170,15 @@ def UI():
     ms_unit_options = ['mm', 'um', 'nm', 'deg']
     ms_unit = tk.StringVar(value=ms_unit_value)
     ms_unit_menu = tk.OptionMenu(input_frame_tab1, ms_unit, *ms_unit_options)
-    ms_unit_menu.grid(row=input_frame_tab1.start_row, column=2, padx=5, pady=5)
+    ms_unit_menu.grid(row=input_frame_tab1.axis_row, column=3, padx=5, pady=5)
     
     ms_lbl_err_units = tk.Label(master=input_frame_tab1, text="Error Units:", width=25, height=1)
-    ms_lbl_err_units.grid(row=input_frame_tab1.axis_row, column=3, padx=5, pady=5)
+    ms_lbl_err_units.grid(row=input_frame_tab1.end_row, column=2, padx=5, pady=5)
     
     ms_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'deg']
     ms_err_unit = tk.StringVar(value=ms_err_unit_value)
     ms_err_unit_menu = tk.OptionMenu(input_frame_tab1, ms_err_unit, *ms_err_unit_options)
-    ms_err_unit_menu.grid(row=input_frame_tab1.start_row, column=3, padx=5, pady=5)
+    ms_err_unit_menu.grid(row=input_frame_tab1.end_row, column=3, padx=5, pady=5)
     
     ms_lbl_sample = tk.Label(master=input_frame_tab1, text="Sample Rate:", width=25, height=1)
     ms_lbl_sample.grid(row=input_frame_tab1.iter_row, column=2, padx=5, pady=5)
@@ -1184,7 +1186,7 @@ def UI():
     ms_sample_options = [('1 kHz', 1000), ('10 kHz', 10000), ('20 kHz', 20000), ('100 kHz', 100000), ('200 kHz', 200000)]
     ms_sample = tk.StringVar(value=ms_sample_value)
     ms_sample_menu = tk.OptionMenu(input_frame_tab1, ms_sample, *[option[0] for option in ms_sample_options])
-    ms_sample_menu.grid(row=input_frame_tab1.speed_row, column=2, padx=5, pady=5)
+    ms_sample_menu.grid(row=input_frame_tab1.iter_row, column=3, padx=5, pady=5)
 
     ms_lbl_serial = tk.Label(master=input_frame_tab1, text="System Serial Number", width=25, height=1)
     ms_lbl_serial.grid(row=input_frame_tab1.sys_row, column=0, padx=5, pady=5)
@@ -1348,6 +1350,7 @@ def UI():
             "ipj_axis_name": ipj_axis.get(),  # Entry widget
             "ipj_signal": ipj_signal_var.get(),  # OptionMenu
             "ipj_probe_axis": ipj_probe.get(),  # Entry widget
+            "ipj_probe_dist": ipj_probe_dist.get(),
             "ipj_scale factor (user units)": ipj_sens.get(),  # Entry widget
             "ipj_units": ipj_unit.get(),  # OptionMenu
             "ipj_error_units": ipj_err_unit.get(),  # OptionMenu
@@ -1393,7 +1396,9 @@ def UI():
         TestTime = int(ipj_dwell.get())
         Direction = str(ipj_direction_var.get())
         Sensitivity = float(ipj_sens.get())
-        ProbeAxis = str(ipj_probe.get())
+        Probe_Axis_List = ipj_probe.get()
+        ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
+        probe_dist = ipj_probe_dist.get()
         
         try:
             if ipj_signal == 'None':
@@ -1468,7 +1473,7 @@ def UI():
             
         global_state.ipj = jitter(Axis, SamplingRate, TestTime, Direction, 
                                   Sensitivity, ProbeAxis, units = ipj_unit.get(),
-                                  error_units = ipj_err_unit.get(), import_data=False, text_widget=txt_outStr1
+                                  error_units = ipj_err_unit.get(), import_data=False, text_widget=txt_outStr1, probe_dist=probe_dist
                                         )
         global_state.ipj.test(controller)
             
@@ -1966,6 +1971,9 @@ def UI():
     ipj_direction = 'Pos'
     ipj_signal = a1data.mode.pos_fbk
     
+    ipj_unit = tk.StringVar(value=ipj_unit_value)
+    ipj_signal_var = tk.StringVar(value=ipj_signal_value)
+    
     def ipj_direction_def():
         global ipj_direction
         if ipj_direction.get() == "Positive":
@@ -1989,6 +1997,8 @@ def UI():
             ipj_lbl_dir["state"] = tk.DISABLED
             ipj_pos_dir["state"] = tk.DISABLED
             ipj_neg_dir["state"] = tk.DISABLED
+            ipj_lbl_dist["state"] = tk.DISABLED
+            ipj_ent_dist["state"] = tk.DISABLED
         elif ipj_signal_var.get() == "Capacitance Probe":
             ipj_signal = a1data.mode.ai0
             ipj_ent_probe["state"] = tk.NORMAL
@@ -2000,9 +2010,20 @@ def UI():
             ipj_lbl_dir["state"] = tk.NORMAL
             ipj_pos_dir["state"] = tk.NORMAL
             ipj_neg_dir["state"] = tk.NORMAL
+            ipj_lbl_dist["state"] = tk.NORMAL
+            ipj_ent_dist["state"] = tk.NORMAL
         else:
             ipj_signal = 'None'
     
+    def ipj_unit_def(*args):
+        if ipj_unit.get() == "deg":
+            if ipj_signal_var.get() == 'Capacitance Probe':
+                ipj_lbl_dist["state"] = tk.NORMAL
+                ipj_ent_dist["state"] = tk.NORMAL
+        elif ipj_unit.get() != 'deg':
+            ipj_lbl_dist["state"] = tk.DISABLED
+            ipj_ent_dist["state"] = tk.DISABLED
+            
     def ipj_get_sample_rate_value():
         selected_text = ipj_samp.get()  # Get the selected display text, e.g., '1 kHz
         # Find the actual numeric value corresponding to the selected text
@@ -2010,7 +2031,11 @@ def UI():
             if option[0] == selected_text:
                 return option[1]
         return None  # If not found, return None or handle it as needed
-
+    
+    # Attach trace callbacks
+    ipj_signal_var.trace_add('write', ipj_signal_def)
+    ipj_unit.trace_add('write', ipj_unit_def)
+    
     ipj_lbl_axis = tk.Label(master=input_frame_tab2, text="Axis Name", width=25, height=1)
     ipj_lbl_axis.grid(row=input_frame_tab2.axis_row, column=0, padx=5, pady=5)
 
@@ -2021,31 +2046,37 @@ def UI():
     ipj_lbl_sig = tk.Label(master=input_frame_tab2, text="Signal", width=25, height=1)
     ipj_lbl_sig.grid(row=input_frame_tab2.sig_row, column=0, padx=5, pady=5)
     
-    ipj_signal_var = tk.StringVar(value=ipj_signal_value)
     ipj_signal_var.trace_add('write', ipj_signal_def)
     ipj_signal_options = ['Encoder', 'Capacitance Probe']
     ipj_signal_menu = tk.OptionMenu(input_frame_tab2, ipj_signal_var, *ipj_signal_options)
     ipj_signal_menu.grid(row=input_frame_tab2.sig_row, column=1, padx=5, pady=5)
 
-    ipj_lbl_probe = tk.Label(master=input_frame_tab2, text="Probe Axis Name:", width=25, height=1,state=tk.DISABLED)
-    ipj_lbl_probe.grid(row=input_frame_tab2.sig_row, column=2, padx=5, pady=5)
+    ipj_lbl_probe = tk.Label(master=input_frame_tab2, text="Probe Axis (Or Axes):", width=25, height=1,state=tk.DISABLED)
+    ipj_lbl_probe.grid(row=input_frame_tab2.axis_row, column=2, padx=5, pady=5)
 
     ipj_probe = tk.StringVar(value=ipj_probe_value)
     ipj_ent_probe = tk.Entry(master=input_frame_tab2, textvariable=ipj_probe, width=25,state=tk.DISABLED)
-    ipj_ent_probe.grid(row=input_frame_tab2.units_row, column=2, padx=5, pady=5)
+    ipj_ent_probe.grid(row=input_frame_tab2.axis_row, column=3, padx=5, pady=5)
+    
+    ipj_lbl_dist = tk.Label(master=input_frame_tab2, text="Probe Distance:", width=25, height=1,state=tk.DISABLED)
+    ipj_lbl_dist.grid(row=input_frame_tab2.units_row, column=2, padx=5, pady=5)
+
+    ipj_probe_dist = tk.StringVar(value=ipj_probe_dist_value)
+    ipj_ent_dist = tk.Entry(master=input_frame_tab2, textvariable=ipj_probe_dist, width=25,state=tk.DISABLED)
+    ipj_ent_dist.grid(row=input_frame_tab2.units_row, column=3, padx=5, pady=5)
     
     ipj_lbl_sens = tk.Label(master=input_frame_tab2, text="Scale Factor (User Units)", width=25, height=1,state=tk.DISABLED)
-    ipj_lbl_sens.grid(row=input_frame_tab2.sig_row, column=3, padx=5, pady=5)
+    ipj_lbl_sens.grid(row=input_frame_tab2.samp_row, column=2, padx=5, pady=5)
 
     ipj_sens = tk.StringVar(value=ipj_sens_value)
     ipj_ent_sens = tk.Entry(master=input_frame_tab2, textvariable=ipj_sens, width=25,state=tk.DISABLED)
-    ipj_ent_sens.grid(row=input_frame_tab2.units_row, column=3, padx=5, pady=5)
+    ipj_ent_sens.grid(row=input_frame_tab2.samp_row, column=3, padx=5, pady=5)
     
     ipj_lbl_units = tk.Label(master=input_frame_tab2, text="Units:", width=25, height=1)
     ipj_lbl_units.grid(row=input_frame_tab2.units_row, column=0, padx=5, pady=5)
     
+    ipj_unit.trace_add('write', ipj_unit_def)
     ipj_unit_options = ['mm', 'um', 'nm', 'urad', 'deg']
-    ipj_unit = tk.StringVar(value=ipj_unit_value)
     ipj_unit_menu = tk.OptionMenu(input_frame_tab2, ipj_unit, *ipj_unit_options)
     ipj_unit_menu.grid(row=input_frame_tab2.units_row, column=1, padx=5, pady=5)
 
@@ -2124,7 +2155,10 @@ def UI():
 
     ipj_btn_run_rot = tk.Button(master=input_frame_tab2, text="Run", width=25, height=1, command=start_jittertest)
     ipj_btn_run_rot.grid(row=input_frame_tab2.run_row, column=0, padx=5, pady=5)
-
+    
+    # Manually trigger the callback functions to set the initial state
+    ipj_signal_def()
+    ipj_unit_def()
 # =============================================================================
 # Tab 3
 # 
@@ -2266,6 +2300,7 @@ def UI():
             "ins_num_step": ins_num_step.get(),
             "ins_signal": ins_signal_var.get(),
             "ins_probe_axis": ins_probe.get(),
+            "ins_probe_dist": ins_probe_dist.get(),
             "ins_scale factor (user units)": ins_sens.get(),
             "ins_speed": ins_speed_.get(),
             "ins_ramp_rate": ins_ramp_v.get(),
@@ -2315,7 +2350,9 @@ def UI():
         s = float(ins_ipj.get())
         t_ms = float(ins_settle.get())
         sensitivity = float(ins_sens.get())
-        probe_axis = str(ins_probe.get())
+        Probe_Axis_List = ipj_probe.get()
+        ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
+        probe_dist = ins_probe_dist.get()
         num_steps = int(ins_num_step.get())
         units = str(ins_unit.get())
         error_units = str(ins_err_unit.get())
@@ -2409,7 +2446,7 @@ def UI():
                 except:
                     messagebox.showerror('No Device', 'No Devices Present. Check Connections.')
 
-        global_state.ins = incremental_step(axis, sample_rate, step_size, s, t_ms, sensitivity, probe_axis, num_steps,
+        global_state.ins = incremental_step(axis, sample_rate, step_size, s, t_ms, sensitivity, ProbeAxis, num_steps,
                                           units=units,
                                           error_units=error_units,
                                           direction=ins_dir, 
@@ -2418,7 +2455,8 @@ def UI():
                                           speed=speed, 
                                           ramp_value=ramp_value,
                                           import_data=False,
-                                          text_widget=txt_outStr2
+                                          text_widget=txt_outStr2,
+                                          probe_dist=probe_dist
                                           )
         global_state.ins.test(controller)
             
@@ -2432,7 +2470,8 @@ def UI():
         s = float(ins_ipj.get())
         t_ms = float(ins_settle.get())
         sensitivity = float(ins_sens.get())
-        probe_axis = str(ins_probe.get())
+        Probe_Axis_List = ipj_probe.get()
+        ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
         num_steps = int(ins_num_step.get())
         units = str(ins_unit.get())
         error_units = str(ins_err_unit.get())
@@ -2441,7 +2480,7 @@ def UI():
         speed = int(ins_speed_.get())
         ramp_value = int(ins_ramp_v.get())
         
-        global_state.ins = incremental_step(axis, sample_rate, step_size, s, t_ms, sensitivity, probe_axis, num_steps,
+        global_state.ins = incremental_step(axis, sample_rate, step_size, s, t_ms, sensitivity, ProbeAxis, num_steps,
                                           units=units,
                                           error_units=error_units,
                                           direction=ins_dir, 
@@ -3045,6 +3084,10 @@ def UI():
     ins_dir = a1data.mode.Unidirectional
     ins_signal = a1data.mode.pos_fbk    
     
+    ins_signal_var = tk.StringVar(value=ins_signal_value)
+    ins_unit = tk.StringVar(value=ins_unit_value)
+    ins_direction = tk.StringVar(value=0)
+    
     def ins_test_type_def():
         global ins_dir
         if ins_direction.get() == "uni":
@@ -3064,6 +3107,8 @@ def UI():
             ins_lbl_sens["state"] = tk.DISABLED
             ins_lbl_sample["state"] = tk.DISABLED
             ins_sample_menu["state"] = tk.DISABLED
+            ins_lbl_dist["state"] = tk.DISABLED
+            ins_ent_dist["state"] = tk.DISABLED
         elif ins_signal_var.get() == "Capacitance Probe":
             ins_signal = a1data.mode.ai0
             ins_ent_probe["state"] = tk.NORMAL
@@ -3072,10 +3117,21 @@ def UI():
             ins_lbl_sens["state"] = tk.NORMAL
             ins_lbl_sample["state"] = tk.NORMAL
             ins_sample_menu["state"] = tk.NORMAL
+            if ins_unit.get() == 'deg':
+                ins_lbl_dist["state"] = tk.NORMAL
+                ins_ent_dist["state"] = tk.NORMAL
         else:
             ins_signal = "None"
-
-            
+    
+    def ins_unit_def(*args):
+        if ins_unit.get() == "deg":
+            if ins_signal_var.get() == 'Capacitance Probe':
+                ins_lbl_dist["state"] = tk.NORMAL
+                ins_ent_dist["state"] = tk.NORMAL
+        elif ins_unit.get() != 'deg':
+            ins_lbl_dist["state"] = tk.DISABLED
+            ins_ent_dist["state"] = tk.DISABLED
+        
     # Function to get the selected sample rate value
     def ins_get_sample_rate_value():
         selected_text = ins_samp.get()  # Get the selected display text, e.g., '1 kHz
@@ -3085,11 +3141,14 @@ def UI():
                 return option[1]
         return None  # If not found, return None or handle it as needed
     
+    # Attach trace callbacks
+    ins_signal_var.trace_add('write', ins_signal_def)
+    ins_unit.trace_add('write', ins_unit_def)
+    
     # Create the UI elements and assign the stored values
     ins_lbl_test = tk.Label(master=input_frame_tab3, text="Select Test Type:")
     ins_lbl_test.grid(row=input_frame_tab3.tt_row, column=0, padx=5, pady=5)
 
-    ins_direction = tk.StringVar(value=0)
     ins_uni_dir = tk.Radiobutton(master=input_frame_tab3, text="Unidirectional", variable=ins_direction, value="uni", command=ins_test_type_def)
     ins_uni_dir.grid(row=input_frame_tab3.tt_row, column=1, padx=5, pady=5)
 
@@ -3153,30 +3212,36 @@ def UI():
     ins_ent_jitter.grid(row=input_frame_tab3.ipj_row, column=1, padx=5, pady=5)
     
     ins_lbl_sig = tk.Label(master=input_frame_tab3, text="Signal", width=25, height=1)
-    ins_lbl_sig.grid(row=input_frame_tab3.axis_row, column=2, padx=5, pady=5)
+    ins_lbl_sig.grid(row=input_frame_tab3.step_row, column=2, padx=5, pady=5)
     
-    ins_signal_var = tk.StringVar(value=ins_signal_value)
     ins_signal_var.trace_add('write', ins_signal_def)
     ins_signal_options = ['Encoder', 'Capacitance Probe']
     ins_signal_menu = tk.OptionMenu(input_frame_tab3, ins_signal_var, *ins_signal_options)
-    ins_signal_menu.grid(row=input_frame_tab3.start_row, column=2, padx=5, pady=5)
+    ins_signal_menu.grid(row=input_frame_tab3.step_row, column=3, padx=5, pady=5)
     
-    ins_lbl_probe = tk.Label(master=input_frame_tab3, text="Probe Axis", width=25, height=1,state=tk.DISABLED)
-    ins_lbl_probe.grid(row=input_frame_tab3.axis_row, column=3, padx=5, pady=5)
+    ins_lbl_probe = tk.Label(master=input_frame_tab3, text="Probe Axis (Or Axes)", width=25, height=1,state=tk.DISABLED)
+    ins_lbl_probe.grid(row=input_frame_tab3.num_step_row, column=2, padx=5, pady=5)
 
     ins_probe = tk.StringVar(value=ins_probe_value)
     ins_ent_probe = tk.Entry(master=input_frame_tab3, textvariable=ins_probe, width=25,state=tk.DISABLED)
-    ins_ent_probe.grid(row=input_frame_tab3.start_row, column=3, padx=5, pady=5)
+    ins_ent_probe.grid(row=input_frame_tab3.num_step_row, column=3, padx=5, pady=5)
+    
+    ins_lbl_dist = tk.Label(master=input_frame_tab3, text="Probe Distance", width=25, height=1,state=tk.DISABLED)
+    ins_lbl_dist.grid(row=input_frame_tab3.speed_row, column=2, padx=5, pady=5)
+
+    ins_probe_dist = tk.StringVar(value=ins_probe_dist_value)
+    ins_ent_dist = tk.Entry(master=input_frame_tab3, textvariable=ins_probe_dist, width=25,state=tk.DISABLED)
+    ins_ent_dist.grid(row=input_frame_tab3.speed_row, column=3, padx=5, pady=5)
     
     ins_lbl_sens = tk.Label(master=input_frame_tab3, text="Scale Factor (User Units)", width=25, height=1,state=tk.DISABLED)
-    ins_lbl_sens.grid(row=input_frame_tab3.step_row, column=3, padx=5, pady=5)
+    ins_lbl_sens.grid(row=input_frame_tab3.dwell_row, column=2, padx=5, pady=5)
 
     ins_sens = tk.StringVar(value=ins_sens_value)
     ins_ent_sens = tk.Entry(master=input_frame_tab3, textvariable=ins_sens, width=25,state=tk.DISABLED)
-    ins_ent_sens.grid(row=input_frame_tab3.num_step_row, column=3, padx=5, pady=5)
+    ins_ent_sens.grid(row=input_frame_tab3.dwell_row, column=3, padx=5, pady=5)
     
     ins_lbl_sample = tk.Label(master=input_frame_tab3, text="Sample Rate:", width=25, height=1,state=tk.DISABLED)
-    ins_lbl_sample.grid(row=input_frame_tab3.speed_row, column=3, padx=5, pady=5)
+    ins_lbl_sample.grid(row=input_frame_tab3.ramp_v_row, column=2, padx=5, pady=5)
     
     ins_sample_options = [('1 kHz', 1000), ('10 kHz', 10000), ('20 kHz', 20000), ('100 kHz', 100000), ('200 kHz', 200000)]
     ins_samp = tk.StringVar(value=ins_sample_value)
@@ -3185,20 +3250,20 @@ def UI():
     ins_sample_menu.grid(row=input_frame_tab3.ramp_v_row, column=3, padx=5, pady=5)
     
     ins_lbl_units = tk.Label(master=input_frame_tab3, text="Units:", width=25, height=1)
-    ins_lbl_units.grid(row=input_frame_tab3.step_row, column=2, padx=5, pady=5)
+    ins_lbl_units.grid(row=input_frame_tab3.axis_row, column=2, padx=5, pady=5)
     
+    ins_unit.trace_add('write', ins_unit_def)
     ins_unit_options = ['mm', 'um', 'nm', 'deg']
-    ins_unit = tk.StringVar(value=ins_unit_value)
     ins_unit_menu = tk.OptionMenu(input_frame_tab3, ins_unit, *ins_unit_options)
-    ins_unit_menu.grid(row=input_frame_tab3.num_step_row, column=2, padx=5, pady=5)
+    ins_unit_menu.grid(row=input_frame_tab3.axis_row, column=3, padx=5, pady=5)
     
     ins_lbl_err_units = tk.Label(master=input_frame_tab3, text="Error Units:", width=25, height=1)
-    ins_lbl_err_units.grid(row=input_frame_tab3.speed_row, column=2, padx=5, pady=5)
+    ins_lbl_err_units.grid(row=input_frame_tab3.start_row, column=2, padx=5, pady=5)
     
     ins_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'urad', 'deg']
     ins_err_unit = tk.StringVar(value=ins_err_unit_value)
     ins_err_unit_menu = tk.OptionMenu(input_frame_tab3, ins_err_unit, *ins_err_unit_options)
-    ins_err_unit_menu.grid(row=input_frame_tab3.ramp_v_row, column=2, padx=5, pady=5)
+    ins_err_unit_menu.grid(row=input_frame_tab3.start_row, column=3, padx=5, pady=5)
     
     ins_lbl_settle = tk.Label(master=input_frame_tab3, text="Settle Time")
     ins_lbl_settle.grid(row=input_frame_tab3.ipj_row, column=2, padx=5, pady=5)
@@ -3248,6 +3313,10 @@ def UI():
     ins_btn_run_rot = tk.Button(master=input_frame_tab3, text="Run", width=25, height=1, command=start_incrementalsteptest)
     ins_btn_run_rot.grid(row=input_frame_tab3.run_row, column=0, padx=5, pady=5)
     
+    # Manually trigger the callback functions to set the initial state
+    ins_signal_def()
+    ins_unit_def()
+    
     def on_closing():
         global window_open
         window_open = False  # Set the flag to indicate that the window is closing
@@ -3280,6 +3349,7 @@ def UI():
                     "ipj_axis_name": ipj_axis.get(),
                     "ipj_signal": ipj_signal_var.get(),
                     "ipj_probe_axis": ipj_probe.get(),
+                    "ipj_probe_dist": ipj_probe_dist.get(),
                     "ipj_scale factor (user units)": ipj_sens.get(),
                     "ipj_units": ipj_unit.get(),
                     "ipj_error_units": ipj_err_unit.get(),
@@ -3300,6 +3370,7 @@ def UI():
                     "ins_num_step": ins_num_step.get(),
                     "ins_signal": ins_signal_var.get(),
                     "ins_probe_axis": ins_probe.get(),
+                    "ins_probe_dist": ins_probe_dist.get(),
                     "ins_scale factor (user units)": ins_sens.get(),
                     "ins_speed": ins_speed_.get(),
                     "ins_ramp_rate": ins_ramp_v.get(),

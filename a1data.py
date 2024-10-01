@@ -14,6 +14,7 @@ import sys
 import traceback
 import enum
 import automation1 as a1
+import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -59,10 +60,11 @@ class a1data(ABC):
     
     #Axis and sample rate are required parameters for an a1data subclass instance
     @abstractmethod
-    def __init__(self, axis, sample_rate, probe_axis, **kwargs):
+    def __init__(self, axis, sample_rate, probe_axis, probe_dist, **kwargs):
         self.axis = axis
         self.sample_rate = sample_rate
         self.probe_axis = probe_axis
+        self.probe_dist = probe_dist
         
         #These values should not be adjusted by the user, results of the test method
         self.n = 0 #number of data points
@@ -179,7 +181,11 @@ class a1data(ABC):
             data_config.axis.add(a1.AxisDataSignal.VelocityCommand, self.axis)
             data_config.axis.add(a1.AxisDataSignal.VelocityFeedback, self.axis)
             data_config.axis.add(a1.AxisDataSignal.VelocityError, self.axis)
-            data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis)
+            if self.units == 'deg':
+                data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis[0])
+                data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis[1])
+            else:
+                data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis)
         ###########TB
         
         return data_config
@@ -207,6 +213,31 @@ class a1data(ABC):
         dat = pd.DataFrame(data = d)
         return dat
     
+    def calculate_angular_step(self, results):
+        # Retrieve the lists of data points from the probes
+        probe_1 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis[0]).points
+        probe_2 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis[1]).points
+        
+        # Initialize a list to store the calculated angular steps
+        angular_steps = []
+        
+        # Iterate through the data points of probe_1 and probe_2
+        for i, e in zip(probe_1, probe_2):
+            # Calculate the opposite side of the triangle
+            opp = abs(i - e)
+            
+            # Adjacent side of the triangle is the distance between the probes
+            adj = self.probe_dist
+            
+            # Calculate the angle in radians
+            theta_rad = math.atan(opp / adj) if adj != 0 else 0  # Avoid division by zero
+            
+            # Convert the angle to degrees
+            theta_deg = math.degrees(theta_rad)
+            
+            # Store the calculated angle in degrees
+            angular_steps.append(theta_deg)
+        
     def populate(self, results = None, file = None, dataframe = None):
         if self.import_data == True:
             results = None
@@ -233,7 +264,10 @@ class a1data(ABC):
                 self.vel_com = results.axis.get(a1.AxisDataSignal.VelocityCommand, self.axis).points
                 self.vel_fbk = results.axis.get(a1.AxisDataSignal.VelocityFeedback, self.axis).points
                 self.vel_err = results.axis.get(a1.AxisDataSignal.VelocityError, self.axis).points
-                self.ai0 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis).points
+                if self.units == 'deg':
+                    self.ai0 = self.calculate_angular_step(results)
+                else:
+                    self.ai0 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis).points
             ##########TB
             conversion_factors = {
                 # Length units
