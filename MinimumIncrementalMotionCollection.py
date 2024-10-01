@@ -154,6 +154,7 @@ class incremental_step(a1data.a1data):
         self.t_ave = kwargs['t_ave']
         self.start_pos = kwargs['start_pos']
         self.text_widget = kwargs['text_widget']
+        self.probe_dist = kwargs['probe_dist']
     
     def setup_error_logging(self):
         # Redirect sys.stderr to the text widget
@@ -165,10 +166,6 @@ class incremental_step(a1data.a1data):
         print(error_message)  # This will be redirected to the Text widget
           
     def test(self, controller : a1.Controller):
-        
-        
-        
-        
         '''
         Represents the testing procedure of a B5.64 compliant incremental step test
 
@@ -229,7 +226,8 @@ class incremental_step(a1data.a1data):
         
         #If analog data is chosen, must be multiplied by the sensitivity        
         if self.probe_axis != 'None':
-            self.ai0 = [e * self.sens for e in self.ai0]
+            for axis in self.probe_axis:
+                self.ai0 = [e * self.sens for e in self.ai0]
         
         if self.probe_axis != 'None':
             #Checks to see if probe direction sense matches the encoder and flips the sign if not
