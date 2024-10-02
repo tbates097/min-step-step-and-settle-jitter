@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.2.0 - 2024-09-24
+
+### Added
+- Functionality take in data from two cap probes for min step/jitter on rotary stages.
+
 ## 1.1.0 - 2024-09-24
 
 ### Added
