@@ -187,7 +187,7 @@ class jitter(a1data.a1data):
         results = controller.runtime.data_collection.collect_snapshot(data_config)
         
         #Results as n length arrays with all of the data points collected
-        self.populate(results)
+        self.populate(self.sens, results)
         
         #if self.start_pos != 0:
             #self.pos_com = [e - self.pos_com[0] for e in self.pos_com]

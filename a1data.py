@@ -181,8 +181,8 @@ class a1data(ABC):
             
             if self.units == 'deg':
                 for axis in self.probe_axis:
-                    data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.axis)
-                    data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.axis)
+                    data_config.axis.add(a1.AxisDataSignal.AnalogInput0, axis)
+                    data_config.axis.add(a1.AxisDataSignal.AnalogInput0, axis)
             else:
                 data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis)
         ###########TB
@@ -213,10 +213,13 @@ class a1data(ABC):
         return dat
     
     def calculate_angular_step(self, sens, results):
-        print(results)
         # Retrieve the lists of data points from the probes
-        probe_1 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis[0]).points
-        probe_2 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis[1]).points
+        axis_1 = str(self.probe_axis[0])
+        axis_2 = str(self.probe_axis[1])
+        print(self.probe_axis)
+        print(axis_1, axis_2)
+        probe_1 = results.axis.get(a1.AxisDataSignal.AnalogInput0, axis_1).points
+        probe_2 = results.axis.get(a1.AxisDataSignal.AnalogInput0, axis_2).points
         
         probe_1 = [i * sens for i in probe_1]
         probe_2 = [i * sens for i in probe_2]
@@ -230,7 +233,7 @@ class a1data(ABC):
             opp = abs(i - e)
             
             # Adjacent side of the triangle is the distance between the probes
-            adj = self.probe_dist
+            adj = float(self.probe_dist)
             
             # Calculate the angle in radians
             theta_rad = math.atan(opp / adj) if adj != 0 else 0  # Avoid division by zero
@@ -276,7 +279,7 @@ class a1data(ABC):
                 self.vel_fbk = results.axis.get(a1.AxisDataSignal.VelocityFeedback, self.axis).points
                 self.vel_err = results.axis.get(a1.AxisDataSignal.VelocityError, self.axis).points
                 if self.units == 'deg':
-                    self.ai0 = self.calculate_angular_step(results, sens)
+                    self.ai0 = self.calculate_angular_step(sens, results)
                 else:
                     self.ai0 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis).points
             ##########TB

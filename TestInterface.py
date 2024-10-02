@@ -2076,14 +2076,14 @@ def UI():
     ipj_lbl_units.grid(row=input_frame_tab2.units_row, column=0, padx=5, pady=5)
     
     ipj_unit.trace_add('write', ipj_unit_def)
-    ipj_unit_options = ['mm', 'um', 'nm', 'urad', 'deg']
+    ipj_unit_options = ['mm', 'um', 'nm', 'deg']
     ipj_unit_menu = tk.OptionMenu(input_frame_tab2, ipj_unit, *ipj_unit_options)
     ipj_unit_menu.grid(row=input_frame_tab2.units_row, column=1, padx=5, pady=5)
 
     ipj_lbl_err_units = tk.Label(master=input_frame_tab2, text="Error Units:", width=25, height=1)
     ipj_lbl_err_units.grid(row=input_frame_tab2.err_row, column=0, padx=5, pady=5)
     
-    ipj_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'deg']
+    ipj_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'μrad', 'deg']
     ipj_err_unit = tk.StringVar(value=ipj_err_unit_value)
     ipj_err_unit_menu = tk.OptionMenu(input_frame_tab2, ipj_err_unit, *ipj_err_unit_options)
     ipj_err_unit_menu.grid(row=input_frame_tab2.err_row, column=1, padx=5, pady=5)
@@ -2360,8 +2360,7 @@ def UI():
         start_pos = int(ins_start.get())
         speed = int(ins_speed_.get())
         ramp_value = int(ins_ramp_v.get())
-        print(Probe_Axis_List)
-        print(ProbeAxis)
+
         try:
             if ins_dir == 'None':
                 ins_dir_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
@@ -3261,7 +3260,7 @@ def UI():
     ins_lbl_err_units = tk.Label(master=input_frame_tab3, text="Error Units:", width=25, height=1)
     ins_lbl_err_units.grid(row=input_frame_tab3.start_row, column=2, padx=5, pady=5)
     
-    ins_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'urad', 'deg']
+    ins_err_unit_options = ['mm', 'um', 'nm', 'arcsec', 'μrad', 'deg']
     ins_err_unit = tk.StringVar(value=ins_err_unit_value)
     ins_err_unit_menu = tk.OptionMenu(input_frame_tab3, ins_err_unit, *ins_err_unit_options)
     ins_err_unit_menu.grid(row=input_frame_tab3.start_row, column=3, padx=5, pady=5)
