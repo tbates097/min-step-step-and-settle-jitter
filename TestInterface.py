@@ -1060,7 +1060,7 @@ def UI():
         save_csv_button = tk.Button(pdf_window, text="Save CSV", command=ms_CSV_save_path)
         save_csv_button.grid(row=8, column=0, pady=10)
 
-        # Button to save CSV
+        # Finish Test
         end_test_button = tk.Button(pdf_window, text="Finish Test", command=end_test)
         end_test_button.grid(row=9, column=0, pady=10)
         
