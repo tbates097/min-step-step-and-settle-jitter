@@ -232,12 +232,20 @@ class a1data(ABC):
             # Calculate the angle in radians
             theta_rad = math.atan(opp / adj) if adj != 0 else 0  # Avoid division by zero
             
-            # Convert the angle to degrees
-            theta_deg = math.degrees(theta_rad)
-            
-            # Store the calculated angle in degrees
-            angular_steps.append(theta_deg)
-        
+            if self.error_units == 'arcsec':
+                # Convert the angle to degrees
+                theta_deg = math.degrees(theta_rad)
+                theta_arcsec = theta_deg * 3600
+                # Store the calculated angle in degrees
+                angular_steps.append(theta_arcsec)
+                
+            else:
+                theta_urad = theta_rad * 1e6
+                # Store the calculated angle in radians
+                angular_steps.append(theta_urad) 
+                
+        return angular_steps
+    
     def populate(self, results = None, file = None, dataframe = None):
         if self.import_data == True:
             results = None
@@ -386,34 +394,6 @@ class a1data(ABC):
             
             self.pos_fbk = [e - self.pos_com[0] for e in self.pos_fbk]
             self.pos_com = [e - self.pos_com[0] for e in self.pos_com]
-            
-
-            conversion_factors = {
-                # Length units
-                ('mm', 'nm'): 1_000_000,
-                ('mm', 'um'): 1_000,
-                ('um', 'nm'): 1_000,
-                ('um', 'um'): 1,
-                
-                # Angular units
-                ('deg', 'arcsec'): 3_600,
-                ('arcsec', 'deg'): 1/3_600,
-                ('deg', 'μrad'): 17_453.29252,
-                ('μrad', 'deg'): 1/17_453.29252,
-                ('arcsec', 'μrad'): 4.848136811,
-                ('μrad', 'arcsec'): 1/4.848136811,
-                ('μrad', 'μrad'): 1,
-                ('deg', 'deg'): 1,
-                ('arcsec', 'arcsec'): 1,
-            }
-            
-            conversion_factor = conversion_factors.get((self.units, self.error_units))
-            
-            if conversion_factor:
-                self.pos_com = [e * conversion_factor for e in self.pos_com]
-                self.pos_fbk = [e * conversion_factor for e in self.pos_fbk]
-                self.ai0 = [e * conversion_factor for e in self.ai0]
-
 
     def plot(self, *args : mode):
         #plot anything vs time
