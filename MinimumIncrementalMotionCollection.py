@@ -179,7 +179,7 @@ class incremental_step(a1data.a1data):
         None.
 
         '''
-        
+        print(self.probe_axis)
         if self.direction == a1data.mode.Bidirectional:
             self.n = (int)(self.sample_rate*(self.t_ave+self.t_ms)*(np.add(self.num_steps,1))*2)
         else:
@@ -222,7 +222,7 @@ class incremental_step(a1data.a1data):
         results = controller.runtime.data_collection.get_results(data_config, self.n)
         
         #Results as n length arrays with all of the data points collected
-        self.populate(results)
+        self.populate(self.sens, results)
         
         #If analog data is chosen, must be multiplied by the sensitivity        
         if self.probe_axis != 'None':

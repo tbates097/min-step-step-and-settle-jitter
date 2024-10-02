@@ -157,10 +157,7 @@ class a1data(ABC):
                                                                               a1.RampMode.Rate, self.ramp_value)
         controller.runtime.commands.motion.enable(self.axis,1)
       # controller.runtime.commands.motion.home(self.axis, 1) #commented out so it does not home and crash probe
-        
-        
 
-        
         #Data configurations. These are how to configure data collection parameters
         if self.probe_axis == 'None':
             data_config = a1.DataCollectionConfiguration(self.n, self.__freq)  #Freq should be 20x the max frequency required by end process
@@ -181,9 +178,11 @@ class a1data(ABC):
             data_config.axis.add(a1.AxisDataSignal.VelocityCommand, self.axis)
             data_config.axis.add(a1.AxisDataSignal.VelocityFeedback, self.axis)
             data_config.axis.add(a1.AxisDataSignal.VelocityError, self.axis)
+            
             if self.units == 'deg':
-                data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis[0])
-                data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis[1])
+                for axis in self.probe_axis:
+                    data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.axis)
+                    data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.axis)
             else:
                 data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis)
         ###########TB
@@ -213,10 +212,14 @@ class a1data(ABC):
         dat = pd.DataFrame(data = d)
         return dat
     
-    def calculate_angular_step(self, results):
+    def calculate_angular_step(self, sens, results):
+        print(results)
         # Retrieve the lists of data points from the probes
         probe_1 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis[0]).points
         probe_2 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis[1]).points
+        
+        probe_1 = [i * sens for i in probe_1]
+        probe_2 = [i * sens for i in probe_2]
         
         # Initialize a list to store the calculated angular steps
         angular_steps = []
@@ -246,7 +249,7 @@ class a1data(ABC):
                 
         return angular_steps
     
-    def populate(self, results = None, file = None, dataframe = None):
+    def populate(self, sens, results = None, file = None, dataframe = None):
         if self.import_data == True:
             results = None
         if results is not None:
@@ -273,7 +276,7 @@ class a1data(ABC):
                 self.vel_fbk = results.axis.get(a1.AxisDataSignal.VelocityFeedback, self.axis).points
                 self.vel_err = results.axis.get(a1.AxisDataSignal.VelocityError, self.axis).points
                 if self.units == 'deg':
-                    self.ai0 = self.calculate_angular_step(results)
+                    self.ai0 = self.calculate_angular_step(results, sens)
                 else:
                     self.ai0 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis).points
             ##########TB

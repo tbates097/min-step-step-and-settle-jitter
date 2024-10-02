@@ -2058,7 +2058,7 @@ def UI():
     ipj_ent_probe = tk.Entry(master=input_frame_tab2, textvariable=ipj_probe, width=25,state=tk.DISABLED)
     ipj_ent_probe.grid(row=input_frame_tab2.axis_row, column=3, padx=5, pady=5)
     
-    ipj_lbl_dist = tk.Label(master=input_frame_tab2, text="Probe Distance:", width=25, height=1,state=tk.DISABLED)
+    ipj_lbl_dist = tk.Label(master=input_frame_tab2, text="Probe Distance (mm):", width=25, height=1,state=tk.DISABLED)
     ipj_lbl_dist.grid(row=input_frame_tab2.units_row, column=2, padx=5, pady=5)
 
     ipj_probe_dist = tk.StringVar(value=ipj_probe_dist_value)
@@ -2350,7 +2350,7 @@ def UI():
         s = float(ins_ipj.get())
         t_ms = float(ins_settle.get())
         sensitivity = float(ins_sens.get())
-        Probe_Axis_List = ipj_probe.get()
+        Probe_Axis_List = ins_probe.get()
         ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
         probe_dist = ins_probe_dist.get()
         num_steps = int(ins_num_step.get())
@@ -2360,7 +2360,8 @@ def UI():
         start_pos = int(ins_start.get())
         speed = int(ins_speed_.get())
         ramp_value = int(ins_ramp_v.get())
-        
+        print(Probe_Axis_List)
+        print(ProbeAxis)
         try:
             if ins_dir == 'None':
                 ins_dir_none = prompt_user("Please select a test type. Press 'Enter' when ready.")
@@ -2470,7 +2471,7 @@ def UI():
         s = float(ins_ipj.get())
         t_ms = float(ins_settle.get())
         sensitivity = float(ins_sens.get())
-        Probe_Axis_List = ipj_probe.get()
+        Probe_Axis_List = ins_probe.get()
         ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
         num_steps = int(ins_num_step.get())
         units = str(ins_unit.get())
@@ -3226,7 +3227,7 @@ def UI():
     ins_ent_probe = tk.Entry(master=input_frame_tab3, textvariable=ins_probe, width=25,state=tk.DISABLED)
     ins_ent_probe.grid(row=input_frame_tab3.num_step_row, column=3, padx=5, pady=5)
     
-    ins_lbl_dist = tk.Label(master=input_frame_tab3, text="Probe Distance", width=25, height=1,state=tk.DISABLED)
+    ins_lbl_dist = tk.Label(master=input_frame_tab3, text="Probe Distance (mm)", width=25, height=1,state=tk.DISABLED)
     ins_lbl_dist.grid(row=input_frame_tab3.speed_row, column=2, padx=5, pady=5)
 
     ins_probe_dist = tk.StringVar(value=ins_probe_dist_value)
