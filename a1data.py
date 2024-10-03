@@ -126,7 +126,7 @@ class a1data(ABC):
         '''
         
         #update a1data units based on controller
-        self.units = controller.runtime.parameters.axes[self.axis].units.unitsname.value 
+        #self.units = controller.runtime.parameters.axes[self.axis].units.unitsname.value 
         
         #Set up speed
         controller.runtime.commands.motion_setup.setupcoordinatedspeed(self.speed,) 
