@@ -213,14 +213,15 @@ class a1data(ABC):
         return dat
     
     def calculate_angular_step(self, sens, results):
+
         # Retrieve the lists of data points from the probes
         axis_1 = str(self.probe_axis[0])
         axis_2 = str(self.probe_axis[1])
-        print(self.probe_axis)
-        print(axis_1, axis_2)
+
         probe_1 = results.axis.get(a1.AxisDataSignal.AnalogInput0, axis_1).points
         probe_2 = results.axis.get(a1.AxisDataSignal.AnalogInput0, axis_2).points
-        
+
+        # Scale the probe data so that the units match the units of the distance between the probes.
         probe_1 = [i * sens for i in probe_1]
         probe_2 = [i * sens for i in probe_2]
         
@@ -238,17 +239,13 @@ class a1data(ABC):
             # Calculate the angle in radians
             theta_rad = math.atan(opp / adj) if adj != 0 else 0  # Avoid division by zero
             
-            if self.error_units == 'arcsec':
+            if self.units == 'deg':
                 # Convert the angle to degrees
                 theta_deg = math.degrees(theta_rad)
-                theta_arcsec = theta_deg * 3600
-                # Store the calculated angle in degrees
-                angular_steps.append(theta_arcsec)
+                angular_steps.append(theta_deg)
                 
             else:
-                theta_urad = theta_rad * 1e6
-                # Store the calculated angle in radians
-                angular_steps.append(theta_urad) 
+                angular_steps.append(theta_rad) 
                 
         return angular_steps
     
@@ -283,12 +280,14 @@ class a1data(ABC):
                 else:
                     self.ai0 = results.axis.get(a1.AxisDataSignal.AnalogInput0, self.probe_axis).points
             ##########TB
+
             conversion_factors = {
                 # Length units
                 ('mm', 'nm'): 1_000_000,
                 ('mm', 'um'): 1_000,
                 ('um', 'nm'): 1_000,
                 ('um', 'um'): 1,
+                ('mm', 'mm'): 1,
                 
                 # Angular units
                 ('deg', 'arcsec'): 3_600,
