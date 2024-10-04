@@ -2652,9 +2652,10 @@ def UI():
     def ins_process_data():
         global html_file_path, ins_new_folder_path
         def next_function():
+            #plt.clf()
             toggle_topmost(False)
             analyze_window.destroy()
-            ins_PDF()
+            ins_PDF(extra_signal=extra_signal_var.get())
             
         global open_criteria
         open_criteria = 'no'
@@ -2733,7 +2734,7 @@ def UI():
             data = global_state.ins.data_analysis()
     
             def plot_results():
-                global html_file_path, ins_new_folder_path
+                global html_file_path, ins_new_folder_path, stair_fig, stair_ax, step_ax, step_fig
             
                 # Configure the figure size for matplotlib plots
                 plt.rcParams.update({'font.size': 11})
@@ -2763,7 +2764,7 @@ def UI():
             
                 # Set labels and legends
                 stair_ax.set_xlabel('Time (seconds)')
-                stair_ax.set_ylabel('Position (deg)' if ins_probe.get() == 'None' else 'Analog Input (units)')
+                stair_ax.set_ylabel(f'Position {ins_unit.get()}' if ins_probe.get() == 'None' else f'Analog Input {ins_err_unit.get()}')
                 stair_ax.legend()
             
                 # Create figure and axes for the step plot
@@ -2899,7 +2900,7 @@ def UI():
         
         analyze_window.wait_window()
 
-    def ins_PDF():
+    def ins_PDF(extra_signal):
         global ins_new_folder_path
         def finish_test():
             pdf_window.destroy()
@@ -2953,7 +2954,7 @@ def UI():
             font_size_ax4 = max(7, ax4_height * 40)
             
             if ins_probe.get() == 'None':
-                if extra_signal == a1data.mode.pos_com:
+                if extra_signal == 'Position Command':
                     # Upper Step Plot
                     ax1_up = plt.subplot2grid((14, 3), (2, 0), rowspan=3, colspan=3)
                     ax1_up.plot(global_state.ins.time_array, global_state.ins.pos_fbk, '-r', label='Position Feedback')
@@ -2970,7 +2971,7 @@ def UI():
                     plt.xlabel('Time (seconds)')
         
             else:
-                if extra_signal == a1data.mode.pos_com:
+                if extra_signal == 'Position Command':
                     #Upper Step Plot
                     ax1_up = plt.subplot2grid((14, 3),(2,0), rowspan = 3, colspan = 3)
                     ax1_up.plot(global_state.ins.time_array, global_state.ins.ai0, '-r', label='Analog Input')
@@ -2979,7 +2980,7 @@ def UI():
                     plt.ylabel('Position ({})'.format(global_state.ins.error_units))
                     plt.xlabel('Time (seconds)')
                     plt.legend(loc='upper right')
-                elif extra_signal == a1data.mode.pos_fbk:
+                elif extra_signal == 'Position Feedback':
                     #Upper Step Plot
                     ax1_up = plt.subplot2grid((14,3),(2,0), rowspan = 2, colspan = 3)
                     ax1_up.plot(global_state.ins.time_array, global_state.ins.ai0, '-r', label='Analog Input')
