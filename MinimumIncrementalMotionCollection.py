@@ -179,7 +179,6 @@ class incremental_step(a1data.a1data):
         None.
 
         '''
-        print(self.probe_axis)
         if self.direction == a1data.mode.Bidirectional:
             self.n = (int)(self.sample_rate*(self.t_ave+self.t_ms)*(np.add(self.num_steps,1))*2)
         else:
@@ -224,10 +223,11 @@ class incremental_step(a1data.a1data):
         #Results as n length arrays with all of the data points collected
         self.populate(self.sens, results)
         
-        #If analog data is chosen, must be multiplied by the sensitivity        
-        if self.probe_axis != 'None':
-            for axis in self.probe_axis:
-                self.ai0 = [e * self.sens for e in self.ai0]
+        if self.units != 'deg':
+            #If analog data is chosen, must be multiplied by the sensitivity        
+            if self.probe_axis != 'None':
+                for axis in self.probe_axis:
+                    self.ai0 = [e * self.sens for e in self.ai0]
         
         if self.probe_axis != 'None':
             #Checks to see if probe direction sense matches the encoder and flips the sign if not
@@ -623,7 +623,7 @@ class incremental_step(a1data.a1data):
         # Set title, labels, and legend
         ax.set_title('Average and Move and Settle Time Comparison for {}'.format(step_label), size=10)
         ax.set_xlabel('Time (sec)', size=10)
-        ax.set_ylabel('Position ({})'.format(self.error_units if self.probe_axis == 'None' else 'Analog Input ({})'.format(self.error_units)), size=10)
+        ax.set_ylabel('Position ({})'.format(self.error_units), size=10)
         ax.tick_params(axis='both', labelsize=8)
         ax.legend(loc=legend_loc, bbox_to_anchor=(1.01, 1.01), fontsize=legend_size)
     
