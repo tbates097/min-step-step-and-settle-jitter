@@ -231,7 +231,7 @@ class a1data(ABC):
         # Iterate through the data points of probe_1 and probe_2
         for i, e in zip(probe_1, probe_2):
             # Calculate the opposite side of the triangle
-            opp = abs(i - e)
+            opp = i - e
             
             # Adjacent side of the triangle is the distance between the probes
             adj = float(self.probe_dist)
