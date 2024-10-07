@@ -149,7 +149,7 @@ class jitter(a1data.a1data):
 
         
         #Data configurations. These are how to configure data collection parameters
-        
+        print(self.probe_axis)
         data_config = a1.DataCollectionConfiguration(self.n, self.__freq)  #Freq should be 20x the max frequency required by end process
         data_config.system.add(a1.SystemDataSignal.DataCollectionSampleTime)
         data_config.axis.add(a1.AxisDataSignal.PositionCommand, self.axis)

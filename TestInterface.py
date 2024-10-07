@@ -1397,7 +1397,10 @@ def UI():
         Direction = str(ipj_direction_var.get())
         Sensitivity = float(ipj_sens.get())
         Probe_Axis_List = ipj_probe.get()
-        ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
+        if ipj_unit.get() == 'deg' and ipj_signal == "Capacitance Probe":
+            ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
+        else:
+            ProbeAxis = ipj_probe.get()
         probe_dist = ipj_probe_dist.get()
         
         try:
@@ -1723,7 +1726,7 @@ def UI():
         
             # Assuming ipj is part of your global state or passed in as a parameter
             data_dict = global_state.ipj.data_analysis(mode, [low_bound.get(), high_bound.get()])
-        
+            
             # Plotting the jitter data
             fig1 = plt.figure(figsize=(6, 2))
             ax1 = fig1.add_subplot(111)
@@ -1731,10 +1734,10 @@ def UI():
             ax1.set_xlabel('Time (seconds)', size=10)
             ax1.set_ylabel('Jitter ({})'.format(ipj_err_unit.get()), size=10)
             ax1.tick_params(axis='both', labelsize=8)
-        
+            
             print(f'The sample standard deviation is {data_dict["stdev"]:.3e}')
             print(f'The peak-to-peak in-position jitter is {data_dict["peak"]:.3e}')
-        
+
             # Plotting the CRMS data
             fig2 = plt.figure(figsize=(6, 2))
             ax2 = fig2.add_subplot(111)
@@ -1749,6 +1752,7 @@ def UI():
             plot_results_plotly()
             
         def ipj_embed_plot_in_canvas(jitter_plot, crms_plot, canvas_frame):
+
             # Clear any existing plots in the frames
             for widget in canvas_frame.winfo_children():
                 widget.destroy()
@@ -1766,6 +1770,7 @@ def UI():
             crms_canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew')  # Use grid for precise placement
             
         def plot_results_plotly():
+
             global ipj_new_folder_path
             # Assuming `ipj` is part of your global state or passed in as a parameter
             data_dict = global_state.ipj.data_analysis(mode, [low_bound.get(), high_bound.get()])
@@ -2351,7 +2356,10 @@ def UI():
         t_ms = float(ins_settle.get())
         sensitivity = float(ins_sens.get())
         Probe_Axis_List = ins_probe.get()
-        ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
+        if ipj_unit.get() == 'deg' and ipj_signal == "Capacitance Probe":
+            ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
+        else:
+            ProbeAxis = ipj_probe.get()
         probe_dist = ins_probe_dist.get()
         num_steps = int(ins_num_step.get())
         units = str(ins_unit.get())
@@ -2764,7 +2772,7 @@ def UI():
             
                 # Set labels and legends
                 stair_ax.set_xlabel('Time (seconds)')
-                stair_ax.set_ylabel(f'Position {ins_unit.get()}' if ins_probe.get() == 'None' else f'Analog Input {ins_err_unit.get()}')
+                stair_ax.set_ylabel(f'Position {ins_err_unit.get()}' if ins_probe.get() == 'None' else f'Analog Input {ins_err_unit.get()}')
                 stair_ax.legend()
             
                 # Create figure and axes for the step plot
