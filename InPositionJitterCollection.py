@@ -158,11 +158,13 @@ class jitter(a1data.a1data):
         data_config.axis.add(a1.AxisDataSignal.VelocityCommand, self.axis)
         data_config.axis.add(a1.AxisDataSignal.VelocityFeedback, self.axis)
         data_config.axis.add(a1.AxisDataSignal.VelocityError, self.axis)
-        if self.units == 'deg':
+        if self.probe_axis != 'None' and self.units == 'deg':
             data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis[0])
             data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis[1])
-        else:
+        elif self.probe_axis != 'None' and self.units != 'deg':
             data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.probe_axis)
+        else:
+            data_config.axis.add(a1.AxisDataSignal.AnalogInput0, self.axis)
         
         # #Homing instructions if Cap Probe is used as to not break the cap probe
         # #Move stage until it is in the 0 position of the cap probe
