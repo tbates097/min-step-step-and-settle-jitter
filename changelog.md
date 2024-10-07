@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.2.1 - 2024-09-24
+
+### Fixed
+- The way the program takes in a list for the cap probe signal (axes) was affecting jitter and min step tests that only used the encoder. I differentiated between rotary and linear stages and how they handle taking in probe axis (axes.
+
 ## 1.2.0 - 2024-09-24
 
 ### Added
