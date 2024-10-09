@@ -76,14 +76,15 @@ class jitter(a1data.a1data):
 
         '''
 
-        super().__init__(axis,sample_rate,probe_axis,**kwargs)
+        super().__init__(axis,sample_rate, probe_axis, **kwargs)
         self.test_time = test_time
         self.direction = direction
         self.sens = sensitivity
         self.probe_axis = probe_axis
-
-        self.error_units = kwargs['error_units']
+        
+        self.probe_dist = kwargs.get('probe_dist', None)  # Probe distance, specific to this test
         self.units = kwargs['units']
+        self.error_units = kwargs['error_units']
         self.import_data = kwargs['import_data']
         self.text_widget = kwargs['text_widget']
     
@@ -149,7 +150,6 @@ class jitter(a1data.a1data):
 
         
         #Data configurations. These are how to configure data collection parameters
-        print(self.probe_axis)
         data_config = a1.DataCollectionConfiguration(self.n, self.__freq)  #Freq should be 20x the max frequency required by end process
         data_config.system.add(a1.SystemDataSignal.DataCollectionSampleTime)
         data_config.axis.add(a1.AxisDataSignal.PositionCommand, self.axis)

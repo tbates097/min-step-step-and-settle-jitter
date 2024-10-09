@@ -60,11 +60,10 @@ class a1data(ABC):
     
     #Axis and sample rate are required parameters for an a1data subclass instance
     @abstractmethod
-    def __init__(self, axis, sample_rate, probe_axis, probe_dist, **kwargs):
+    def __init__(self, axis, sample_rate, probe_axis, **kwargs):
         self.axis = axis
         self.sample_rate = sample_rate
         self.probe_axis = probe_axis
-        self.probe_dist = probe_dist
         
         #These values should not be adjusted by the user, results of the test method
         self.n = 0 #number of data points
@@ -77,12 +76,17 @@ class a1data(ABC):
         self.vel_err = []
         self.ai0 = []
         
-        default_kwargs = {'units' : 'mm', 
-                          'speed' : 5, #units/second 
-                          'ramp_type' : a1.RampType.Linear,
-                          'ramp_value' : 100, #units/second/second
-                          'ramp_type_arg' : 100, #Percent for an a1.RampType.SCurve
-                          }
+        # Define default values for optional parameters that are relevant to all test types
+        default_kwargs = {
+            'units': 'mm',
+            'speed': 5,  # units/second 
+            'ramp_type': a1.RampType.Linear,
+            'ramp_value': 100,  # units/second/second
+            'ramp_type_arg': 100,  # Percent for an a1.RampType.SCurve
+            'import_data': False,  # Default to not importing data
+            'text_widget': None,  # Text widget for GUI output, default is None
+            'error_units': None  # Error units, can be None
+        }
         
         #Update defaults if they exist
         kwargs = {**default_kwargs,**kwargs}
@@ -95,6 +99,7 @@ class a1data(ABC):
         self.ramp_type_arg = kwargs['ramp_type_arg']
         self.import_data = kwargs['import_data']
         self.text_widget = kwargs['text_widget']
+        self.probe_dist = kwargs['probe_dist']
     
     def setup_error_logging(self):
         # Redirect sys.stderr to the text widget

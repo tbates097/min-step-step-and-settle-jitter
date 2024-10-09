@@ -67,27 +67,6 @@ class move_and_settle(a1data.a1data):
     None.
 
     '''
-    
-    #Inputs for the Move and Settle Class
-    #   axis
-    #   step_size
-    #   speed
-    #   frame
-    #   sample_rate (Hz)
-    
-    
-    #**kwargs
-    #   direction (1 or 2 for unidirectional or bidirectional)
-    #   num_cycles
-    #   step_time
-    #   speed
-    #   ramp_type - Linear, SCurve, Sine or another option : a1.RampType
-    #   ramp_value - acceleration value
-    #   ramp_type_arg - Percentage for an SCurve ramp type
-    #   units - units used by automation 1
-    #   folder - folder name in the current directory where the csv files will be stored.
-
-    
 
     def __init__(self, axis:str, sample_rate, step_size:float, frame:tuple, probe_axis, **kwargs):
 
@@ -113,6 +92,7 @@ class move_and_settle(a1data.a1data):
         self.folder = kwargs['folder']
         self.import_data = kwargs['import_data']
         self.text_widget = kwargs['text_widget']
+        self.units = kwargs['units']
         
         
         #Non-user definable parameters
