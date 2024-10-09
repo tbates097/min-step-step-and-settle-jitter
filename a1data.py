@@ -99,7 +99,8 @@ class a1data(ABC):
         self.ramp_type_arg = kwargs['ramp_type_arg']
         self.import_data = kwargs['import_data']
         self.text_widget = kwargs['text_widget']
-        self.probe_dist = kwargs['probe_dist']
+        # Use `.get()` to access `probe_dist` if it exists, otherwise set to None
+        self.probe_dist = kwargs.get('probe_dist', None)
     
     def setup_error_logging(self):
         # Redirect sys.stderr to the text widget
