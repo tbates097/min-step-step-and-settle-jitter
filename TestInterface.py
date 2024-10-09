@@ -1474,10 +1474,18 @@ def UI():
                 except:
                     messagebox.showerror('No Device', 'No Devices Present. Check Connections.')
             
-        global_state.ipj = jitter(Axis, SamplingRate, TestTime, Direction, 
-                                  Sensitivity, ProbeAxis, units = ipj_unit.get(),
-                                  error_units = ipj_err_unit.get(), import_data=False, text_widget=txt_outStr1, probe_dist=probe_dist
-                                        )
+        global_state.ipj = jitter(Axis, 
+                                  SamplingRate, 
+                                  TestTime, 
+                                  Direction, 
+                                  Sensitivity, 
+                                  ProbeAxis, 
+                                  units = ipj_unit.get(),
+                                  error_units = ipj_err_unit.get(), 
+                                  import_data=False, 
+                                  text_widget=txt_outStr1, 
+                                  probe_dist=probe_dist
+                                  )
         global_state.ipj.test(controller)
             
     def import_ipj_data():
@@ -1489,10 +1497,17 @@ def UI():
         Sensitivity = float(ipj_sens.get())
         ProbeAxis = str(ipj_probe.get())
         
-        global_state.ipj = jitter(Axis, SamplingRate, TestTime, Direction, 
-                                  Sensitivity, ProbeAxis, units = ipj_unit.get(),
-                                  error_units = ipj_err_unit.get(), import_data=True, text_widget=txt_outStr1
-                                        )
+        global_state.ipj = jitter(Axis, 
+                                  SamplingRate, 
+                                  TestTime, 
+                                  Direction, 
+                                  Sensitivity, 
+                                  ProbeAxis, 
+                                  units = ipj_unit.get(),
+                                  error_units = ipj_err_unit.get(), 
+                                  import_data=True, 
+                                  text_widget=txt_outStr1
+                                  )
         
         file = filedialog.askopenfilename(multiple=False)
 
