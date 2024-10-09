@@ -80,7 +80,7 @@ class incremental_step(a1data.a1data):
 
     '''
 
-    def __init__(self,axis,sample_rate, step_size, s, t_ms, sensitivity, probe_axis, num_steps, **kwargs):
+    def __init__(self, axis, sample_rate, step_size, s, t_ms, sensitivity, probe_axis, num_steps, **kwargs):
         '''
         Represents a B5.64 compliant test procedure using the Automation 1 controller. When constructing an instance
         of this class, you specify the test parameters you want, then use the 'test' function to actually perform the
@@ -130,31 +130,22 @@ class incremental_step(a1data.a1data):
 
         '''
         #Necessary input arguments for the test to run
-        super(incremental_step,self).__init__(axis, sample_rate,probe_axis, **kwargs)
+        super(incremental_step,self).__init__(axis, sample_rate, probe_axis, **kwargs)
         self.step_size = step_size
         self.s = s
         self.t_ms = t_ms
         self.sens = sensitivity
         self.probe_axis = probe_axis
         self.num_steps = num_steps
-       
         
-        #Input arguments that can be defined but may not be necessary
-        default_kwargs = {'direction' : a1data.mode.Bidirectional,
-                          #'num_steps' : 10,
-                          't_ave' : 2 * t_ms,
-                          'start_pos' : 0,
-                          }
-        
-        #Update defaults if new values exist
-        kwargs = {**default_kwargs, **kwargs}
-        
+        # Set optional parameters specific to 'incremental_step'
+        self.probe_dist = kwargs.get('probe_dist', None)  # Probe distance, specific to this test
         self.direction = kwargs['direction']
         self.error_units = kwargs['error_units']
         self.t_ave = kwargs['t_ave']
         self.start_pos = kwargs['start_pos']
         self.text_widget = kwargs['text_widget']
-        self.probe_dist = kwargs['probe_dist']
+        self.units = kwargs['units']
     
     def setup_error_logging(self):
         # Redirect sys.stderr to the text widget
