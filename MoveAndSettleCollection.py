@@ -144,7 +144,8 @@ class move_and_settle(a1data.a1data):
         
         #wait for the stage to be in position
         time.sleep(self.step_time)
-
+        
+        self.sens = 1
 
         #For the number of cycles that should be run
         for i in range(1, self.num_cycles + 1):
@@ -160,9 +161,9 @@ class move_and_settle(a1data.a1data):
                 
                 #Wait for the results to complete
                 results = controller.runtime.data_collection.get_results(data_config, self.n)
-                
+
                 #Results as n length arrays with all of the data points collected
-                self.populate(results)
+                self.populate(self.sens, results)
 
                 #Write cycle to a csv
                 self.write_to_csv('{}\step{}_{}.csv'.format(self.new_folder_path, j,i))
@@ -185,7 +186,7 @@ class move_and_settle(a1data.a1data):
                     results = controller.runtime.data_collection.get_results(data_config, self.n)
                     
                     #Results as n length arrays with all of the data points collected
-                    self.populate(results)
+                    self.populate(self.sens, results)
 
                     
                     #Write cycle to a csv

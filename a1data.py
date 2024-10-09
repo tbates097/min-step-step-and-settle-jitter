@@ -266,6 +266,7 @@ class a1data(ABC):
             self.time_array = self.time_array.tolist()
             for i, time in enumerate(self.time_array):
                 self.time_array[i] = i/self.sample_rate
+            print(self.probe_axis)
             if self.probe_axis == 'None':
                 self.pos_com = results.axis.get(a1.AxisDataSignal.PositionCommand, self.axis).points
                 self.pos_fbk = results.axis.get(a1.AxisDataSignal.PositionFeedback, self.axis).points
