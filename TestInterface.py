@@ -42,11 +42,12 @@ from MoveAndSettleCollection import move_and_settle
 from InPositionJitterCollection import jitter
 from MinimumIncrementalMotionCollection import incremental_step
 import a1data
+from AerotechFormat import AerotechFormat
 
 syst.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
 syst.path.append(r"C:\Users\tbates\Python\shared")
 from Logger import TextLogger
-from AerotechFormat import AerotechFormat
+
 
 # Clean up malformed and unnecessary paths
 syst.path = [p for p in syst.path if p not in ['', '../', 'C:\\Users\\tbates"', 'C:\\Users\\tbates\\Python\\min-step-step-and-settle-jitter']]

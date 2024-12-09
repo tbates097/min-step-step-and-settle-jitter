@@ -26,7 +26,7 @@ import plotly.io as pio
 import os
 import tempfile
 
-#sys.path.append('../')
+sys.path.append('../')
 
 import a1data
 

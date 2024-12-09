@@ -17,7 +17,7 @@ import plotly.graph_objs as go
 import plotly.io as pio
 import sys
 import datetime
-#sys.path.append('../')
+sys.path.append('../')
 
 import a1data
 
@@ -169,7 +169,9 @@ class move_and_settle(a1data.a1data):
                 self.populate(self.sens, results)
 
                 #Write cycle to a csv
-                self.write_to_csv('{}\step{}_{}.csv'.format(self.new_folder_path, j,i))
+                self.write_to_csv(r'{}\step{}_{}.csv'.format(self.new_folder_path, j, i))
+
+
 
                 
             #If Bidirectional move and settle requested    
@@ -191,9 +193,8 @@ class move_and_settle(a1data.a1data):
                     #Results as n length arrays with all of the data points collected
                     self.populate(self.sens, results)
 
-                    
                     #Write cycle to a csv
-                    self.write_to_csv('{}\stepback{}_{}.csv'.format(self.new_folder_path,j,i))
+                    self.write_to_csv(r'{}\stepback{}_{}.csv'.format(self.new_folder_path, j, i))
             
             #Move to start position of travel    
             else:
