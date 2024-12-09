@@ -38,11 +38,14 @@ import ctypes
 
 # Assuming these are custom imports
 import automation1 as a1
-from Logger import TextLogger
 from MoveAndSettleCollection import move_and_settle
 from InPositionJitterCollection import jitter
 from MinimumIncrementalMotionCollection import incremental_step
 import a1data
+
+syst.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
+syst.path.append(r"C:\Users\tbates\Python\shared")
+from Logger import TextLogger
 from AerotechFormat import AerotechFormat
 
 # Clean up malformed and unnecessary paths

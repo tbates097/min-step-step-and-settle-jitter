@@ -22,6 +22,8 @@ import scipy.signal as signal
 import scipy.integrate as integrate
 from scipy.optimize import curve_fit
 
+sys.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
+sys.path.append(r"C:\Users\tbates\Python\shared")
 from Logger import TextLogger
 
 class jitter(a1data.a1data):

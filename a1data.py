@@ -20,6 +20,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as signal
 
+sys.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
+sys.path.append(r"C:\Users\tbates\Python\shared")
 from Logger import TextLogger
 
 class mode(enum.Enum):
