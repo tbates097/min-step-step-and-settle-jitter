@@ -394,8 +394,7 @@ class move_and_settle(a1data.a1data):
         self.ai0 = self.ai0[no_move_range[0][1]:]
         
         #Calculates the total duration of the move for each step file
-        
-        self.move_time = (no_move_range[1][0]-no_move_range[0][1])/self.sample_rate   
+        self.move_time = (no_move_range[1][0]-no_move_range[0][1])/self.sample_rate 
                 
     def moving_window(self, process_window, window_direction):
         '''
@@ -541,7 +540,7 @@ class move_and_settle(a1data.a1data):
                 t_ms = round((self.time_array[t_ind]), 4)
                 self.move_end_ind = t_ind
                 t_ind-=1
-                
+               
             #Makes sure that the error metric move and settle time is not less than the move duration. 
             #This is essentially the instantly settled condition check
             if t_ms < self.move_time: t_ms = self.move_time
@@ -564,16 +563,20 @@ class move_and_settle(a1data.a1data):
     
     def aero_move_and_settle(self, time_spec : float, settle_window : float, sig, df):
         '''
-        Determines the aerotech move and settle time for a move and settle test.
-        Creates a bar graph displaying the aerotech move and settle time for each step overlayed with the desired time specification
+        Calculates the Aerotech move and settle time for a move and settle test.
+        Creates a bar graph displaying the Aerotech move and settle time for each step overlayed with the desired time specification
         
         Parameters
         ----------
         time_spec : float
-            Specified time specification not to exceed in seconds.
+            Specified time specification not to exceed in seconds
         settle_window : float
             Specified position window for the system to settle within in self.units
-
+        sig : float
+            Option to average all steps
+        df : str
+            Step number to analyze
+        
         Returns
         -------
         aerosettle_dict : dict
@@ -585,7 +588,6 @@ class move_and_settle(a1data.a1data):
                     
         fig1: figure
             Figure containing a bar plot of each step that was included, and if its move and settle time met the specified criteria 
-
         '''
         self.df = df
         self.sig = sig
@@ -611,7 +613,7 @@ class move_and_settle(a1data.a1data):
             # Temporary index of where the last velocity command that is greater than zero is located
             temp_vel_ind = np.where(np.abs(self.vel_com) > 0)[0]
             last_vel_ind = np.max(temp_vel_ind) if len(temp_vel_ind) > 0 else -1
-            
+
             # If length of temp_vel_ind is 0, then there was no move captured
             if last_vel_ind == -1: 
                 print('No move captured')
@@ -628,7 +630,7 @@ class move_and_settle(a1data.a1data):
             self.ai0 = self.ai0[self.move_end_ind:]
             
             temp_pos_ind = np.where(np.abs(self.pos_err) >= settle_window)[0].tolist()
-            
+
             if len(temp_pos_ind) > 0:
                 # Adjust the index to the original array orientation
                 last_pos_ind = np.max(temp_pos_ind)
@@ -636,17 +638,20 @@ class move_and_settle(a1data.a1data):
             else:
                 # If no significant deviation found, set to -1
                 last_pos_ind = -1
- 
+
+
             # If no indices in temp_pos_ind, store the length of the current velocity command minus 1
             if last_pos_ind == -1:
                 actual_ms_time = self.move_time
-                
-            actual_ms_time = self.time_array[last_pos_ind]
+            else:   
+                actual_ms_time = self.time_array[last_pos_ind]
 
-            test_passed = (actual_ms_time <= time_spec) #Bool returning if the calculated move and settle time was less than the specification
-             
+            #Calculates the time that the move and settle time must be less than
+            if actual_ms_time == self.move_time:
+                test_passed = 'instantaneous'
+            else:
+                test_passed = (actual_ms_time <= time_spec) #Bool returning if the calculated move and settle time was less than the specification
 
-         
         #Dictionary with information related to calculating Aerotech Move and Settle time
         aero_settle_dict = {'Aerotech Move and Settle Time': actual_ms_time,
                            'Time Specification': time_spec,
@@ -789,16 +794,16 @@ class move_and_settle(a1data.a1data):
         time_spec = aero_settle_dict['Time Specification']    
         ms_times = [aerotech_settle_time, time_spec]
         
-        if after_move_end == True:
-            start = self.start_plot
+        #if after_move_end == True:
+            #start = self.start_plot
             #start = int(np.average(self.move_end_ind))
-            ms_label_locs = [i+0.015 for i in ms_times]
-            end = np.where(np.array(time_vals) == time_spec)[0][0] + 50
+            #ms_label_locs = [i+0.015 for i in ms_times]
+            #end = np.where(np.array(time_vals) == time_spec)[0][0] + 50
 
-        else: 
-            start = 0
-            ms_label_locs = [i/2 for i in ms_times]
-            end = len(time_vals)-1
+        #else: 
+        start = 0
+        ms_label_locs = [i/2 for i in ms_times]
+        end = len(time_vals)-1
        
         plt.plot(time_vals[start:end], plt_signal[start:end], linewidth = 7, label = sig_label)
 
@@ -917,20 +922,20 @@ class move_and_settle(a1data.a1data):
 
         time_spec = aero_settle_dict['Time Specification']
 
-        if after_move_end:
-            start = self.start_plot
+        #if after_move_end:
+            #start = self.start_plot
             # Use np.isclose to find the index of the value closest to time_spec within a small tolerance
-            tolerance = 1e-6  # Adjust this value as needed based on the precision of your data
-            result = np.where(np.isclose(time_vals, time_spec, atol=tolerance))[0]
+            #tolerance = 1e-6  # Adjust this value as needed based on the precision of your data
+            #result = np.where(np.isclose(time_vals, time_spec, atol=tolerance))[0]
             
-            if result.size > 0:
-                end = result[0] + 50
-            else:
-                print(f"No matching elements close to {time_spec} found in time_vals. Using default end value.")
-                end = 50  # Default handling if no match is found
-        else:
-            start = 0
-            end = len(time_vals) - 1
+            #if result.size > 0:
+                #end = result[0] + 50
+            #else:
+                #print(f"No matching elements close to {time_spec} found in time_vals. Using default end value.")
+                #end = 50  # Default handling if no match is found
+        #else:
+        start = 0
+        end = len(time_vals) - 1
     
         trace = go.Scatter(
             x=time_vals[start:end],

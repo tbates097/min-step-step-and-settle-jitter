@@ -35,6 +35,7 @@ import copy
 import gc
 import json
 import ctypes
+import importlib
 
 # Assuming these are custom imports
 import automation1 as a1
@@ -44,10 +45,9 @@ from MinimumIncrementalMotionCollection import incremental_step
 import a1data
 from AerotechFormat import AerotechFormat
 
-syst.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
+#syst.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
 syst.path.append(r"C:\Users\tbates\Python\shared")
 from Logger import TextLogger
-
 
 # Clean up malformed and unnecessary paths
 syst.path = [p for p in syst.path if p not in ['', '../', 'C:\\Users\\tbates"', 'C:\\Users\\tbates\\Python\\min-step-step-and-settle-jitter']]
@@ -779,7 +779,7 @@ def UI():
     plot_frame_tab1.grid_columnconfigure(0, weight=1)
     
     def ms_process_data(folder, import_data):
-        global desired_time,pos_tolerance,avg
+        global avg
         
         avg = None
         def average_button():
@@ -793,13 +793,22 @@ def UI():
         
         def process_button_click():
             toggle_topmost(False)
-            process_results()
+            pos_tolerance_value = position_tolerance.get()
+            desired_time_value = desired_time.get()
+            process_results(desired_time_value, pos_tolerance_value)
             toggle_topmost(True)
         
         def next_function():
             plt.clf()
             process_window.destroy()
-            ms_PDF(latest_folder)
+            if aero_dict['Passed Move and Settle Time'] == 'instantaneous':
+                messagebox.showinfo("Test Complete", "Instantaneous Move and Settle Times will not include a report.")
+                window.after(0, lambda: ms_btn_run_rot.config(state=tk.NORMAL))
+            elif aero_dict['Passed Move and Settle Time'] == False:
+                messagebox.showinfo("Test Failed", "Move and Settle time is greater than the desired settle time. Stage may require tuning.")
+                window.after(0, lambda: ms_btn_run_rot.config(state=tk.NORMAL))
+            else:
+                ms_PDF(latest_folder)
         
         def toggle_topmost(state):
             process_window.wm_attributes("-topmost", state)
@@ -826,7 +835,7 @@ def UI():
         position_tolerance = tk.DoubleVar(value=0.00005)
         pos_tolerance_entry = tk.Entry(process_window, textvariable=position_tolerance)
         pos_tolerance_entry.grid(row=2, column=0, pady=10)
-        pos_tolerance = position_tolerance.get()
+        
         
         label_plot = tk.Label(process_window, text="Select 'Average' to average signals")
         label_plot.grid(row=3, column=0, pady=10)
@@ -863,7 +872,7 @@ def UI():
         desired_time = tk.DoubleVar(value=0.5)
         desired_time_entry = tk.Entry(process_window, textvariable=desired_time)
         desired_time_entry.grid(row=6, column=0, pady=10)
-        desired_time = desired_time.get()
+    
         
         def get_canvas_size_in_inches(canvas_frame, dpi=100):
             """Get the size of the canvas in inches."""
@@ -884,30 +893,33 @@ def UI():
             ms_canvas.draw()
             ms_canvas.get_tk_widget().grid(row=0, column=0,pady=(12,0), sticky='nsew')  # Use grid for precise placement
             
-        def process_results():
+        def process_results(desired_time, pos_tolerance):
             # Example processing and plotting function
             global data_dict, aero_dict, ms_new_folder_path
             
             plt.clf()
             
-            # Create the figure and axes using the Aerotech format template
-            fig, ax1, ax2, ax3, ax4 = AerotechFormat.makeTemplate()
-            
+            fig, axes = AerotechFormat.makeTemplate(num_plots=1)
+            ax_logo, ax1, ax3, ax4, ax5 = axes  # Unpack all axes
+
             #data_dict = global_state.ms.data_analysis(error_metric, process_window_size.get(), calc_direction, position_tolerance.get(), df=df.get())
             aero_dict = global_state.ms.aero_move_and_settle(desired_time, pos_tolerance,sig=avg,df=df.get())
-            
+
             canvas_size = get_canvas_size_in_inches(plot_frame_tab1)
             
+            if aero_dict['Passed Move and Settle Time'] == 'instantaneous':
+                messagebox.showinfo("Move and Settle Time", "Move and Settle Time is Instantaneous")
+            else:
             # Plot the metric plot using your existing function
-            plt.rcParams.update({'font.size': 10})
-            aero_plot = global_state.ms.GUI_plot(aero_dict, canvas_size, figNum=3, legend_size=7,step_num=df.get()) 
-            
-            embed_plot_in_canvas(aero_plot,plot_frame_tab1)
-            
-            print('The Aerotech Move and Settle Time is {} seconds'.format(aero_dict['Aerotech Move and Settle Time']))
-            
-            ms_new_folder_path = ms_PDF_save_path()
-            global_state.ms.GUI_plot_plotly(aero_dict, ms_new_folder_path, ax=ax1, legend_size=20)
+                plt.rcParams.update({'font.size': 10})
+                aero_plot = global_state.ms.GUI_plot(aero_dict, canvas_size, figNum=3, legend_size=7,step_num=df.get()) 
+                
+                embed_plot_in_canvas(aero_plot,plot_frame_tab1)
+                
+                print('The Aerotech Move and Settle Time is {} seconds'.format(aero_dict['Aerotech Move and Settle Time']))
+                
+                ms_new_folder_path = ms_PDF_save_path()
+                global_state.ms.GUI_plot_plotly(aero_dict, ms_new_folder_path, ax=ax1, legend_size=20)
             
         btn_process_data = tk.Button(process_window, text="Process Data", command=process_button_click)
         btn_process_data.grid(row=7, column=0, pady=10)
@@ -983,9 +995,9 @@ def UI():
             temp = float(ms_temp.get())
             t = global_state.ms.time_array
         
-            # Create the figure and axes using the Aerotech format template
-            fig, ax1, ax2, ax3, ax4 = AerotechFormat.makeTemplate()
-        
+            fig, axes = AerotechFormat.makeTemplate(num_plots=1)
+            ax_logo, ax1, ax3, ax4, ax5 = axes  # Unpack all axes
+
             # Set appropriate figsize to fit the PDF layout
             fig.set_size_inches(11, 8.5)  # Full page size
             
@@ -1008,46 +1020,46 @@ def UI():
             ax1.set_position([new_left, new_bottom, new_width, new_height])
             
             # Get the size of each axis in inches
-            ax2_width, ax2_height = ax2.get_position().size
-            ax3_width, ax3_height = ax3.get_position().size
-            ax4_width, ax4_height = ax4.get_position().size
+            ax2_width, ax3_height = ax3.get_position().size
+            ax3_width, ax4_height = ax4.get_position().size
+            ax4_width, ax5_height = ax5.get_position().size
         
             # Scale the font size based on the axis size
-            font_size_ax2 = max(7, ax2_height * 40)
-            font_size_ax3 = max(7, ax3_height * 40)
-            font_size_ax4 = max(7, ax4_height * 40)
+            font_size_ax2 = max(9, ax3_height * 40)
+            font_size_ax3 = max(9, ax4_height * 40)
+            font_size_ax4 = max(8, ax5_height * 40)
 
             # Plot directly on ax1 (instead of saving and reloading an image)
-            global_state.ms.pdf_plot(aero_dict, ax=ax1, legend_size=10)
+            global_state.ms.pdf_plot(aero_dict, ax=ax1, legend_size=6)
         
             # Results Text Box (ax2)
-            ax2.text(0.02, .7, 'Aerotech \nmove-and-settle time: {:.3f} sec'.format(aero_dict['Aerotech Move and Settle Time']),
+            ax3.text(0.02, .7, 'Aerotech M.S. time: {:.3f} sec'.format(aero_dict['Aerotech Move and Settle Time']),
                      color='black', size=font_size_ax2)
         
             # Comments Text Box (ax3)
-            ax3.text(.02, .8, 'Serial Number: {}'.format(sys_serial), color='black', size=font_size_ax3)
-            ax3.text(.02, .725, 'Model Number: {}'.format(st_serial), color='black', size=font_size_ax3)
-            ax3.text(.02, .65, 'Operator: {}'.format(oper), color='black', size=font_size_ax3)
-            ax3.text(.02, .575, 'Comments: {}'.format(comments), color='black', size=font_size_ax3, verticalalignment='top')
-        
+            ax4.text(.02, .7, 'Serial Number: {}'.format(sys_serial), color='black', size=font_size_ax3)
+            ax4.text(.02, .6, 'Model Number: {}'.format(st_serial), color='black', size=font_size_ax3)
+            ax4.text(.02, .5, 'Axis: {}'.format(axis), color='black', size=font_size_ax3)
+            ax4.text(.02, .4, 'Operator: {}'.format(oper), color='black', size=font_size_ax3)
+            ax4.text(.02, .2, 'Comments: {}'.format(comments), color='black', size=font_size_ax3, verticalalignment='top')
+            
             # Test Conditions Text Box (ax4)
             degree_sign = u'\N{DEGREE SIGN}'
-            ax4.text(.02, .8, 'Temperature: {} {}C'.format(temp, degree_sign), color='black', size=font_size_ax4)
-            ax4.text(.02, .725, 'Direction: {}'.format("ms_dir"), color='black', size=font_size_ax4)
-            ax4.text(.02, .65, 'Axis Bounds: [{} {}, {} {}]'.format(global_state.ms.frame[0], units, global_state.ms.frame[1], units), color='black', size=font_size_ax4)
-            ax4.text(.02, .575, 'Speed: {} {}/s'.format(speed, units), color='black', size=font_size_ax4)
-            ax4.text(.02, .5, 'Sample Rate: {} Hz'.format(1/t[1]), color='black', size=font_size_ax4)
-            ax4.text(.02, .425, 'Sample Time: {} seconds'.format(np.max(t) + t[1]), color='black', size=font_size_ax4)
-            ax4.text(.02, .350, 'Axis: {}'.format(axis), color='black', size=font_size_ax4)
-            ax4.text(.02, .275, 'Commanded Step: {:.3e} {}'.format(step_size, units), color='black', size=font_size_ax4)
-            ax4.text(.02, .200, 'Position Tolerance: {} {}'.format("position_tolerance", units), color='black', size=font_size_ax4)
+            ax5.text(.02, .75, 'Temperature: {} {}C'.format(temp, degree_sign), color='black', size=font_size_ax4)
+            ax5.text(.02, .65, 'Direction: {}'.format("ms_dir"), color='black', size=font_size_ax4)
+            ax5.text(.02, .55, 'Axis Bounds: [{} {}, {} {}]'.format(global_state.ms.frame[0], units, global_state.ms.frame[1], units), color='black', size=font_size_ax4)
+            ax5.text(.02, .45, 'Speed: {} {}/s'.format(speed, units), color='black', size=font_size_ax4)
+            ax5.text(.02, .35, 'Sample Rate: {} Hz'.format(1/t[1]), color='black', size=font_size_ax4)
+            ax5.text(.02, .25, 'Sample Time: {} seconds'.format(np.max(t) + t[1]), color='black', size=font_size_ax4)
+            ax5.text(.02, .15, 'Commanded Step: {:.3e} {}'.format(step_size, units), color='black', size=font_size_ax4)
+            ax5.text(.02, .05, 'Position Tolerance: {} {}'.format("position_tolerance", units), color='black', size=font_size_ax4)
             
             output_file = str(sys_serial + '-' + str(ms_axis.get()) + "_Step and Settle.pdf")
             save_file = ms_new_folder_path + '/' + output_file
             
             # Save the figure with tight bounding box
             fig.savefig(save_file, bbox_inches='tight')
-            print('PDF saved')
+            print(f'PDF saved to: {save_file}')
             
         # Button to generate PDF
         gen_pdf_button = tk.Button(pdf_window, text="Generate PDF", command=gen_PDF)
@@ -1881,53 +1893,54 @@ def UI():
         def generate_pdf():
             global fig
             plt.rcParams.update({'font.size': 6})
-            fig, ax1, ax2, ax3, ax4 = AerotechFormat.makeTemplate()
-    
+
+            fig, axes = AerotechFormat.makeTemplate(num_plots=2)
+
+            ax_logo, ax1, ax2, ax3, ax4, ax5 = axes  # Unpack all axes
+            
             # Assuming `ipj` is part of your global state or passed in as a parameter
             data_dict = global_state.ipj.data_analysis(mode, [low_bound.get(), high_bound.get()])        
     
             # Upper Jitter Plot
-            ax1_up = plt.subplot2grid((14, 3), (2, 0), rowspan=3, colspan=3)
-            ax1_up.plot(data_dict['t_window'], data_dict['d_window'], '-r')
-            plt.title('In-Position Stability vs Time')
-            plt.ylabel('Position ({})'.format(ipj_err_unit.get()))
-            plt.xlabel('Time (seconds)')
-    
+            ax1.plot(data_dict['t_window'], data_dict['d_window'], '-r')
+            ax1.set_title('In-Position Stability vs Time', fontsize=8)
+            ax1.set_ylabel(f'Position ({ipj_err_unit.get()})', fontsize=7)
+            ax1.set_xlabel('Time (seconds)', fontsize=7)
+
             # Lower Jitter Plot
-            ax1_down = plt.subplot2grid((14, 3), (6, 0), rowspan=3, colspan=3)
-            ax1_down.plot(data_dict['freq'], data_dict['CRMS'], '-b')
-            plt.xlabel('Frequency Hz')
-            plt.ylabel('Cumulative RMS ({})'.format(ipj_unit.get()))
-            plt.title('Cumulative RMS')
-            plt.xlim(0, crms_freq.get())
+            ax2.plot(data_dict['freq'], data_dict['CRMS'], '-b')
+            ax2.set_title('Cumulative RMS', fontsize=8)
+            ax2.set_xlabel('Frequency (Hz)', fontsize=7)
+            ax2.set_ylabel(f'Cumulative RMS ({ipj_unit.get()})', fontsize=7)
+            ax2.set_xlim(0, crms_freq.get())
             
             # Get the size of each axis in inches
-            ax2_width, ax2_height = ax2.get_position().size
             ax3_width, ax3_height = ax3.get_position().size
             ax4_width, ax4_height = ax4.get_position().size
+            ax5_width, ax5_height = ax5.get_position().size
         
             # Scale the font size based on the axis size
-            font_size_ax2 = max(7, ax2_height * 40)
             font_size_ax3 = max(7, ax3_height * 40)
             font_size_ax4 = max(7, ax4_height * 40)
+            font_size_ax5 = max(7, ax5_height * 40)
             
             # Results Text Box
-            ax2.text(0.02, .8, 'Standard Deviation: {:.3e} {}'.format(data_dict['stdev'], ipj_err_unit.get()), color='black', size=font_size_ax2)
-            ax2.text(0.02, .7, 'Peak-to-Peak Value: {:.3e} {}'.format(data_dict['peak'], ipj_err_unit.get()), color='black', size=font_size_ax2)
+            ax3.text(0.02, .7, 'Standard Deviation: {:.3e} {}'.format(data_dict['stdev'], ipj_err_unit.get()), color='black', size=font_size_ax3)
+            ax3.text(0.02, .6, 'Peak-to-Peak Value: {:.3e} {}'.format(data_dict['peak'], ipj_err_unit.get()), color='black', size=font_size_ax3)
     
             # Comments Text Box
-            ax3.text(.02, .8, 'Serial Number: {}'.format(ipj_sys.get()), color='black', size=font_size_ax3)
-            ax3.text(.02, .7, 'Model Number: {}'.format(ipj_st.get()), color='black', size=font_size_ax3)
-            ax3.text(.02, .6, 'Axis: {}'.format(ipj_axis.get()), color='black', size=font_size_ax3)
-            #ax3.text(.02, .575, 'System Location: {}'.format(system_location_var.get()), color='black', size=9)
-            ax3.text(.02, .5, 'Signal: {}'.format(ipj_signal_var.get()), color='black', size=font_size_ax3)
-            ax3.text(.02, .4, 'Comments: {}'.format(ipj_comm.get()), color='black', size=7, verticalalignment='top')
+            ax4.text(.02, .7, 'Serial Number: {}'.format(ipj_sys.get()), color='black', size=font_size_ax4)
+            ax4.text(.02, .6, 'Model Number: {}'.format(ipj_st.get()), color='black', size=font_size_ax4)
+            ax4.text(.02, .5, 'Axis: {}'.format(ipj_axis.get()), color='black', size=font_size_ax4)
+            #ax4.text(.02, .575, 'System Location: {}'.format(system_location_var.get()), color='black', size=9)
+            ax4.text(.02, .4, 'Signal: {}'.format(ipj_signal_var.get()), color='black', size=font_size_ax4)
+            ax4.text(.02, .3, 'Comments: {}'.format(ipj_comm.get()), color='black', size=7, verticalalignment='top')
     
             # Test Conditions Text Box
             degree_sign = u'\N{DEGREE SIGN}'
-            ax4.text(.02, .8, 'Temperature: {}  {}C'.format(ipj_temp.get(), degree_sign), color='black', size=font_size_ax4)
-            ax4.text(.02, .7, 'Sample Rate: {} Hz'.format(1/global_state.ipj.time_array[1]), color='black', size=font_size_ax4)
-            ax4.text(.02, .6, 'Sample Time: {} seconds'.format(np.max(global_state.ipj.time_array) + global_state.ipj.time_array[1]), color='black', size=font_size_ax4)
+            ax5.text(.02, .7, 'Temperature: {}  {}C'.format(ipj_temp.get(), degree_sign), color='black', size=font_size_ax5)
+            ax5.text(.02, .6, 'Sample Rate: {} Hz'.format(1/global_state.ipj.time_array[1]), color='black', size=font_size_ax5)
+            ax5.text(.02, .5, 'Sample Time: {} seconds'.format(np.max(global_state.ipj.time_array) + global_state.ipj.time_array[1]), color='black', size=font_size_ax5)
             print('PDF generated')
             
             output_file = str(ipj_sys.get() + '-' + str(ipj_axis.get()) + "_In_Position_Jitter.pdf")
@@ -2968,87 +2981,79 @@ def UI():
             global fig
         
             plt.rcParams.update({'font.size': 6})
-            fig, ax1, ax2, ax3, ax4 = AerotechFormat.makeTemplate()
-            
+
+            fig, axes = AerotechFormat.makeTemplate(num_plots=2)
+            ax_logo, ax1, ax2, ax3, ax4, ax5 = axes  # Unpack all axes
+
             # Get the size of each axis in inches
-            ax2_width, ax2_height = ax2.get_position().size
             ax3_width, ax3_height = ax3.get_position().size
             ax4_width, ax4_height = ax4.get_position().size
+            ax5_width, ax5_height = ax5.get_position().size
         
             # Scale the font size based on the axis size
-            font_size_ax2 = max(7, ax2_height * 40)
             font_size_ax3 = max(7, ax3_height * 40)
             font_size_ax4 = max(7, ax4_height * 40)
+            font_size_ax5 = max(7, ax5_height * 40)
             
             if ins_probe.get() == 'None':
                 if extra_signal == 'Position Command':
                     # Upper Step Plot
-                    ax1_up = plt.subplot2grid((14, 3), (2, 0), rowspan=3, colspan=3)
-                    ax1_up.plot(global_state.ins.time_array, global_state.ins.pos_fbk, '-r', label='Position Feedback')
-                    ax1_up.plot(global_state.ins.time_array, global_state.ins.pos_com, '-b', label='Position Command')
-                    plt.title('Incremental Step Test')
-                    plt.ylabel('Position ({})'.format(global_state.ins.error_units))
-                    plt.xlabel('Time (seconds)')
-                    plt.legend(loc='upper right')
+                    ax1.plot(global_state.ins.time_array, global_state.ins.pos_fbk, '-r', label='Position Feedback')
+                    ax1.plot(global_state.ins.time_array, global_state.ins.pos_com, '-b', label='Position Command')
+                    ax1.set_ylabel('Position ({})'.format(global_state.ins.error_units))
+                    ax1.set_xlabel('Time (seconds)')
+                    ax1.legend(loc='upper right')
                 else:
-                    ax1_up = plt.subplot2grid((14, 3), (2, 0), rowspan=3, colspan=3)
-                    ax1_up.plot(global_state.ins.time_array, global_state.ins.pos_fbk, '-r')
-                    plt.title('Incremental Step Test')
-                    plt.ylabel('Position ({})'.format(global_state.ins.error_units))
-                    plt.xlabel('Time (seconds)')
+                    ax1.plot(global_state.ins.time_array, global_state.ins.pos_fbk, '-r')
+                    ax1.set_ylabel('Position ({})'.format(global_state.ins.error_units))
+                    ax1.set_xlabel('Time (seconds)')
         
             else:
                 if extra_signal == 'Position Command':
                     #Upper Step Plot
-                    ax1_up = plt.subplot2grid((14, 3),(2,0), rowspan = 3, colspan = 3)
-                    ax1_up.plot(global_state.ins.time_array, global_state.ins.ai0, '-r', label='Analog Input')
-                    ax1_up.plot(global_state.ins.time_array, global_state.ins.pos_com, '-b', label='Position Command')
-                    plt.title('Incremental Step Test')
-                    plt.ylabel('Position ({})'.format(global_state.ins.error_units))
-                    plt.xlabel('Time (seconds)')
-                    plt.legend(loc='upper right')
+                    ax1.plot(global_state.ins.time_array, global_state.ins.ai0, '-r', label='Analog Input')
+                    ax1.plot(global_state.ins.time_array, global_state.ins.pos_com, '-b', label='Position Command')
+                    ax1.set_ylabel('Position ({})'.format(global_state.ins.error_units))
+                    ax1.set_xlabel('Time (seconds)')
+                    ax1.legend(loc='upper right')
                 elif extra_signal == 'Position Feedback':
                     #Upper Step Plot
-                    ax1_up = plt.subplot2grid((14,3),(2,0), rowspan = 2, colspan = 3)
-                    ax1_up.plot(global_state.ins.time_array, global_state.ins.ai0, '-r', label='Analog Input')
-                    plt.title('Incremental Step Test')
-                    plt.ylabel('Position ({})'.format(global_state.ins.error_units))
-                    plt.legend(loc='upper right')
-                    ax1_mid = plt.subplot2grid((14,3),(4,0), rowspan = 2, colspan = 3)            
-                    ax1_mid.plot(global_state.ins.time_array, global_state.ins.pos_fbk, '-b', label='Position Feedback')
-                    plt.ylabel('Position Error ({})'.format(global_state.ins.error_units))
-                    plt.xlabel('Time (seconds)')
-                    plt.legend(loc='upper right')
+                    ax1.plot(global_state.ins.time_array, global_state.ins.ai0, '-r', label='Analog Input')
+                    ax1.set_ylabel('Position ({})'.format(global_state.ins.error_units))
+                    ax1.legend(loc='upper right')    
+                    ax1.plot(global_state.ins.time_array, global_state.ins.pos_fbk, '-b', label='Position Feedback')
+                    ax1.set_ylabel('Position Error ({})'.format(global_state.ins.error_units))
+                    ax1.set_xlabel('Time (seconds)')
+                    ax1.legend(loc='upper right')
                 else:
-                    ax1_up = plt.subplot2grid((14, 3),(2,0), rowspan = 3, colspan = 3)
-                    ax1_up.plot(global_state.ins.time_array, global_state.ins.ai0, '-r')
-                    plt.title('Incremental Step Test')
-                    plt.ylabel('Position ({})'.format(global_state.ins.error_units))
-                    plt.xlabel('Time (seconds)')
+                    ax1.plot(global_state.ins.time_array, global_state.ins.ai0, '-r')
+                    ax1.set_ylabel('Position ({})'.format(global_state.ins.error_units))
+                    ax1.set_xlabel('Time (seconds)')
 
             # Lower Step Plot
-            ax1_down = plt.subplot2grid((14, 5), (6, 0), rowspan=4, colspan=5)
-    
             # Directly plot onto the ax1_down axis
-            global_state.ins.plot(ax=ax1_down, legend_loc='upper right', step_num=step_num_var.get(), fig_size=(8, 4))
+            global_state.ins.plot(ax=ax2, legend_loc='upper right', step_num=step_num_var.get(), fig_size=(8, 4))
 
             #Results Text Box
-            ax2.text(0.02,.8, 'Forward Mean: {:.3e} {}'.format(data['Forward Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax2)
-            ax2.text(0.02,.725, 'Reverse Mean: {:.3e} {}'.format(data['Reverse Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax2)
-            ax2.text(0.02,.65, 'Combined Mean: {:.3e} {}'.format(data['Combined Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax2)
-            ax2.text(0.02,.575, 'Forward StDev: {:.3e} {}'.format(data['Forward Sample Standard Deviation'], global_state.ins.error_units), color = 'black', size = font_size_ax2)
-            ax2.text(0.02,.5, 'Reverse StDev: {:.3e} {}'.format(data['Reverse Sample Standard Deviation'], global_state.ins.error_units), color = 'black', size = font_size_ax2)
-            ax2.text(0.02,.425, 'Combined StDev: {:.3e} {}'.format(data['Combined Sample Standard Deviation'], global_state.ins.error_units), color = 'black', size = font_size_ax2)
-            #ax2.text(0.02,.35, 'Forward Unidirectional Criteria: {}'.format(criteria[3]), color = 'black', size = 8.5)
-            #ax2.text(0.02,.275, 'Reverse Unidirectional Criteria: {}'.format(criteria[7]), color = 'black', size = 8.5)
-            #ax2.text(0.02,.2, 'Bidirectional Criteria: {}'.format(criteria[11]), color = 'black', size = 8.5)
-          
+            if test_type == 'Bidirectional':
+                ax3.text(0.02,.7, 'Forward Mean: {:.3e} {}'.format(data['Forward Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax3)
+                ax3.text(0.02,.6, 'Reverse Mean: {:.3e} {}'.format(data['Reverse Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax3)
+                ax3.text(0.02,.5, 'Combined Mean: {:.3e} {}'.format(data['Combined Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax3)
+                ax3.text(0.02,.4, 'Forward StDev: {:.3e} {}'.format(data['Forward Sample Standard Deviation'], global_state.ins.error_units), color = 'black', size = font_size_ax3)
+                ax3.text(0.02,.3, 'Reverse StDev: {:.3e} {}'.format(data['Reverse Sample Standard Deviation'], global_state.ins.error_units), color = 'black', size = font_size_ax3)
+                ax3.text(0.02,.2, 'Combined StDev: {:.3e} {}'.format(data['Combined Sample Standard Deviation'], global_state.ins.error_units), color = 'black', size = font_size_ax3)
+                #ax3.text(0.02,.35, 'Forward Unidirectional Criteria: {}'.format(criteria[3]), color = 'black', size = 8.5)
+                #ax3.text(0.02,.275, 'Reverse Unidirectional Criteria: {}'.format(criteria[7]), color = 'black', size = 8.5)
+                #ax3.text(0.02,.2, 'Bidirectional Criteria: {}'.format(criteria[11]), color = 'black', size = 8.5)
+            else:
+                ax3.text(0.02,.7, 'Forward Mean: {:.3e} {}'.format(data['Forward Sample Mean'], global_state.ins.error_units), color = 'black', size = font_size_ax3)
+                ax3.text(0.02,.6, 'Forward StDev: {:.3e} {}'.format(data['Forward Sample Standard Deviation'], global_state.ins.error_units), color = 'black', size = font_size_ax3)
             #Comments Text Box
-            ax3.text(.02, .8, 'Serial Number: {}'.format(ins_sys.get()), color = 'black', size = font_size_ax3)
-            ax3.text(.02, .725, 'Model Number: {}'.format(ins_st.get()), color = 'black', size = font_size_ax3)
-            ax3.text(.02, .65, 'Axis: {}'.format(ins_axis.get()), color = 'black', size = font_size_ax3)
-            ax3.text(.02, .575, 'Feedback: {}'.format(ins_signal_var.get()), color = 'black', size = font_size_ax3)
-            ax3.text(.02, .5, 'Comments: {}'.format(ins_comm.get()), color = 'black', size = font_size_ax3, verticalalignment = 'top')
+            ax4.text(.02, .7, 'Serial Number: {}'.format(ins_sys.get()), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .6, 'Model Number: {}'.format(ins_st.get()), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .5, 'Axis: {}'.format(ins_axis.get()), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .4, 'Feedback: {}'.format(ins_signal_var.get()), color = 'black', size = font_size_ax4)
+            ax4.text(.02, .3, 'Comments: {}'.format(ins_comm.get()), color = 'black', size = font_size_ax4, verticalalignment = 'top')
 
             if ins_err_unit.get() == 'nm':
                 StepSize = round(ins_step.get() * 1000,2)
@@ -3060,16 +3065,16 @@ def UI():
                 StepSize = ins_step.get()
             #Test Conditions Text Box
             degree_sign = u'\N{DEGREE SIGN}'
-            ax4.text(.02, .8, 'Temperature: {}  {}C'.format(ins_temp.get(), degree_sign), color = 'black', size = font_size_ax4)
-            #ax4.text(.02, .725, 'IPS StDev: {} {}'.format(ins.s, ins.units), color = 'black', size = 9)
-            ax4.text(.02, .725, 'Move-and-Settle time: {} seconds'.format(global_state.ins.t_ms), color = 'black', size = font_size_ax4)
-            ax4.text(.02, .65, 'Average Time: {} seconds'.format(global_state.ins.t_ave), color = 'black', size = font_size_ax4)
-            ax4.text(.02, .575, 'Sample Rate: {} Hz'.format(1/global_state.ins.time_array[1]), color = 'black', size = font_size_ax4)
-            ax4.text(.02, .500, 'Sample Time: {:.3f} seconds'.format(np.max(global_state.ins.time_array) + global_state.ins.time_array[1]), color = 'black', size = font_size_ax4)
-            ax4.text(.02, .425, 'Step Size: {} {}'.format(StepSize,global_state.ins.error_units), color = 'black', size = font_size_ax4)
-            ax4.text(.02, .350, 'Start Position: {} {}'.format(global_state.ins.start_pos, global_state.ins.units), color = 'black', size = font_size_ax4)
-            ax4.text(.02, .275, 'Number of Steps: {}'.format(global_state.ins.num_steps), color = 'black', size = font_size_ax4)
-            #ax4.text(.02, .350, 'Axis: {}'.format(Axis.value), color = 'black', size = 9)
+            ax5.text(.02, .75, 'Temperature: {}  {}C'.format(ins_temp.get(), degree_sign), color = 'black', size = font_size_ax5)
+            #ax5.text(.02, .725, 'IPS StDev: {} {}'.format(ins.s, ins.units), color = 'black', size = 9)
+            ax5.text(.02, .65, 'Move-and-Settle time: {} seconds'.format(global_state.ins.t_ms), color = 'black', size = font_size_ax5)
+            ax5.text(.02, .55, 'Average Time: {} seconds'.format(global_state.ins.t_ave), color = 'black', size = font_size_ax5)
+            ax5.text(.02, .45, 'Sample Rate: {} Hz'.format(1/global_state.ins.time_array[1]), color = 'black', size = font_size_ax5)
+            ax5.text(.02, .35, 'Sample Time: {:.3f} seconds'.format(np.max(global_state.ins.time_array) + global_state.ins.time_array[1]), color = 'black', size = font_size_ax5)
+            ax5.text(.02, .25, 'Step Size: {} {}'.format(StepSize,global_state.ins.error_units), color = 'black', size = font_size_ax5)
+            ax5.text(.02, .15, 'Start Position: {} {}'.format(global_state.ins.start_pos, global_state.ins.units), color = 'black', size = font_size_ax5)
+            ax5.text(.02, .05, 'Number of Steps: {}'.format(global_state.ins.num_steps), color = 'black', size = font_size_ax5)
+            #ax5.text(.02, .350, 'Axis: {}'.format(Axis.value), color = 'black', size = 9)
             
             output_file = str(ins_sys.get() + '-' + str(ins_axis.get()) + "_MinStep.pdf")
             save_file = ins_new_folder_path + '/' + output_file
@@ -3117,11 +3122,13 @@ def UI():
     ins_direction = tk.StringVar(value=0)
     
     def ins_test_type_def():
-        global ins_dir
+        global ins_dir, test_type
         if ins_direction.get() == "uni":
             ins_dir = a1data.mode.Unidirectional
+            test_type = 'Unidirectional'
         elif ins_direction.get() == "bi":
             ins_dir = a1data.mode.Bidirectional
+            test_type = 'Bidirectional'
         else:
             ins_dir = 'None'
             
