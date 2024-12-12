@@ -467,7 +467,7 @@ def UI():
         syst.stdout = text_logger
         global folder
         # Set the initial directory to the current working directory (where the script is located)
-        initial_directory = os.getcwd()  # or os.path.dirname(__file__) for the script directory
+        initial_directory = 'C:\\Users\\'
         
         # Open a dialog to select a directory, starting at the Python script's directory
         folder = filedialog.askdirectory(title="Select Data File Save Location - LOCAL", initialdir=initial_directory)
@@ -3360,70 +3360,67 @@ def UI():
         
         try:
             # Save user inputs based on the active tab
-            if current_tab == 0:  # First tab
-                user_data = {
-                    "ms_axis_name": ms_axis.get(),
-                    "ms_start_position": ms_start.get(),
-                    "ms_end_position": ms_end.get(),
-                    "ms_step_size": ms_step.get(),
-                    "ms_iterations": ms_iter.get(),
-                    "ms_speed": ms_speed.get(),
-                    "ms_ramp_rate": ms_ramp_v.get(),
-                    "ms_dwell": ms_dwell.get(),
-                    "ms_units": ms_unit.get(),
-                    "ms_error_units": ms_err_unit.get(),
-                    "ms_sample_rate": ms_sample.get(),
-                    "ms_system_serial_number": ms_sys.get(),
-                    "ms_part_number": ms_st.get(),
-                    "ms_operator": ms_opName.get(),
-                    "ms_temp": ms_temp.get(),
-                    "ms_comments": ms_comm.get()
-                }
-            elif current_tab == 1:  # Second tab
-                user_data = {
-                    "ipj_axis_name": ipj_axis.get(),
-                    "ipj_signal": ipj_signal_var.get(),
-                    "ipj_probe_axis": ipj_probe.get(),
-                    "ipj_probe_dist": ipj_probe_dist.get(),
-                    "ipj_scale factor (user units)": ipj_sens.get(),
-                    "ipj_units": ipj_unit.get(),
-                    "ipj_error_units": ipj_err_unit.get(),
-                    "ipj_sample_rate": ipj_samp.get(),
-                    "ipj_duration": ipj_dwell.get(),
-                    "ipj_system_serial_number": ipj_sys.get(),
-                    "ipj_part_number": ipj_st.get(),
-                    "ipj_operator": ipj_opName.get(),
-                    "ipj_temp": ipj_temp.get(),
-                    "ipj_comments": ipj_comm.get(),
-                    "ipj_direction": ipj_direction_var.get()
-                }
-            elif current_tab == 2:  # Third tab
-                user_data = {
-                    "ins_axis_name": ins_axis.get(),
-                    "ins_start_position": ins_start.get(),
-                    "ins_step_size": ins_step.get(),
-                    "ins_num_step": ins_num_step.get(),
-                    "ins_signal": ins_signal_var.get(),
-                    "ins_probe_axis": ins_probe.get(),
-                    "ins_probe_dist": ins_probe_dist.get(),
-                    "ins_scale factor (user units)": ins_sens.get(),
-                    "ins_speed": ins_speed_.get(),
-                    "ins_ramp_rate": ins_ramp_v.get(),
-                    "ins_dwell": ins_dwell.get(),
-                    "ins_jitter": ins_ipj.get(),
-                    "ins_settle": ins_settle.get(),
-                    "ins_units": ins_unit.get(),
-                    "ins_error_units": ins_err_unit.get(),
-                    "ins_sample_rate": ins_samp.get(),
-                    "ins_system_serial_number": ins_sys.get(),
-                    "ins_part_number": ins_st.get(),
-                    "ins_operator": ins_opName.get(),
-                    "ins_temp": ins_temp.get(),
-                    "ins_comments": ins_comm.get()
-                }
-            else:
-                # Default action if no tab is selected (should not happen)
-                user_data = {}
+            #if current_tab == 0:  # First tab
+            user_data = {
+                "ms_axis_name": ms_axis.get(),
+                "ms_start_position": ms_start.get(),
+                "ms_end_position": ms_end.get(),
+                "ms_step_size": ms_step.get(),
+                "ms_iterations": ms_iter.get(),
+                "ms_speed": ms_speed.get(),
+                "ms_ramp_rate": ms_ramp_v.get(),
+                "ms_dwell": ms_dwell.get(),
+                "ms_units": ms_unit.get(),
+                "ms_error_units": ms_err_unit.get(),
+                "ms_sample_rate": ms_sample.get(),
+                "ms_system_serial_number": ms_sys.get(),
+                "ms_part_number": ms_st.get(),
+                "ms_operator": ms_opName.get(),
+                "ms_temp": ms_temp.get(),
+                "ms_comments": ms_comm.get(),
+            #}
+            #elif current_tab == 1:  # Second tab
+            #user_data = {
+                "ipj_axis_name": ipj_axis.get(),
+                "ipj_signal": ipj_signal_var.get(),
+                "ipj_probe_axis": ipj_probe.get(),
+                "ipj_probe_dist": ipj_probe_dist.get(),
+                "ipj_scale factor (user units)": ipj_sens.get(),
+                "ipj_units": ipj_unit.get(),
+                "ipj_error_units": ipj_err_unit.get(),
+                "ipj_sample_rate": ipj_samp.get(),
+                "ipj_duration": ipj_dwell.get(),
+                "ipj_system_serial_number": ipj_sys.get(),
+                "ipj_part_number": ipj_st.get(),
+                "ipj_operator": ipj_opName.get(),
+                "ipj_temp": ipj_temp.get(),
+                "ipj_comments": ipj_comm.get(),
+                "ipj_direction": ipj_direction_var.get(),
+            #}
+            #elif current_tab == 2:  # Third tab
+            #user_data = {
+                "ins_axis_name": ins_axis.get(),
+                "ins_start_position": ins_start.get(),
+                "ins_step_size": ins_step.get(),
+                "ins_num_step": ins_num_step.get(),
+                "ins_signal": ins_signal_var.get(),
+                "ins_probe_axis": ins_probe.get(),
+                "ins_probe_dist": ins_probe_dist.get(),
+                "ins_scale factor (user units)": ins_sens.get(),
+                "ins_speed": ins_speed_.get(),
+                "ins_ramp_rate": ins_ramp_v.get(),
+                "ins_dwell": ins_dwell.get(),
+                "ins_jitter": ins_ipj.get(),
+                "ins_settle": ins_settle.get(),
+                "ins_units": ins_unit.get(),
+                "ins_error_units": ins_err_unit.get(),
+                "ins_sample_rate": ins_samp.get(),
+                "ins_system_serial_number": ins_sys.get(),
+                "ins_part_number": ins_st.get(),
+                "ins_operator": ins_opName.get(),
+                "ins_temp": ins_temp.get(),
+                "ins_comments": ins_comm.get()
+            }
             
             save_user_inputs(user_data)  # Save the data to a file
         except Exception as e:
