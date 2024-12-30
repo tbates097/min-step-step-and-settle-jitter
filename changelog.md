@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.2.2 - 2024-12-11
+
+### Fixed
+- Fixed some issues with the new Python version. Made AerotechFormat.py more unified to work with all Aerotech PDF scenarios
+
 ## 1.2.1 - 2024-09-24
 
 ### Fixed

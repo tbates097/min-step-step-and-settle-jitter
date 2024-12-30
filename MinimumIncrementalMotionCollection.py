@@ -27,8 +27,10 @@ import os
 import tempfile
 
 sys.path.append('../')
-
 import a1data
+
+sys.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
+#sys.path.append(r"C:\Users\tbates\Python\shared")
 from Logger import TextLogger
 
 
@@ -217,8 +219,8 @@ class incremental_step(a1data.a1data):
         if self.units != 'deg':
             #If analog data is chosen, must be multiplied by the sensitivity        
             if self.probe_axis != 'None':
-                for axis in self.probe_axis:
-                    self.ai0 = [e * self.sens for e in self.ai0]
+                #for axis in self.probe_axis:
+                self.ai0 = [e * self.sens for e in self.ai0]
         
         if self.probe_axis != 'None':
             #Checks to see if probe direction sense matches the encoder and flips the sign if not

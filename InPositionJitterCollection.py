@@ -14,14 +14,17 @@ import os
 from datetime import datetime
 import csv
 import traceback
-sys.path.append('../')
-import a1data
 import time as timemodule
 import numpy as np
 import scipy.signal as signal
 import scipy.integrate as integrate
 from scipy.optimize import curve_fit
 
+sys.path.append('../')
+import a1data
+
+sys.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
+#sys.path.append(r"C:\Users\tbates\Python\shared")
 from Logger import TextLogger
 
 class jitter(a1data.a1data):
@@ -239,7 +242,7 @@ class jitter(a1data.a1data):
         PSD = signal.periodogram(d, self.sample_rate) #Generate a power spectral density function as a startingpoint for cumulative rms
         f = PSD[0] #List of sample frequencies
         Pxx = PSD[1] #Power spectral density
-        CRMS = np.sqrt(integrate.cumtrapz(Pxx)) #Cumulatively integrate
+        CRMS = np.sqrt(integrate.cumulative_trapezoid(Pxx)) #Cumulatively integrate
         CRMS = np.insert(CRMS,0,0) #Need to match up array lengths by inserting a 0 to the first element of the CRMS array
         
         data_dict = {'stdev' : s, #Standard deviation of the data inside the window
@@ -248,7 +251,7 @@ class jitter(a1data.a1data):
                      'd_window' : d, #data array inside the window
                      'freq' : f, #List of frequencies corresponding to the CRMS values
                      'CRMS' : CRMS} #Cumulative RMS list
-        
+
         return data_dict
        
 
