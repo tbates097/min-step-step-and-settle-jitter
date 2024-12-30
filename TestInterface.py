@@ -37,6 +37,7 @@ import json
 import ctypes
 import importlib
 
+syst.path.append('../')
 # Assuming these are custom imports
 import automation1 as a1
 from MoveAndSettleCollection import move_and_settle
@@ -44,8 +45,8 @@ from InPositionJitterCollection import jitter
 from MinimumIncrementalMotionCollection import incremental_step
 import a1data
 
-#syst.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
-syst.path.append(r"C:\Users\tbates\Python\shared")
+syst.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
+#syst.path.append(r"C:\Users\tbates\Python\shared")
 from Logger import TextLogger
 from AerotechFormat import AerotechFormat
 
@@ -1754,10 +1755,9 @@ def UI():
         def plot_results():
             # Clear the current figure
             plt.clf()
-        
             # Assuming ipj is part of your global state or passed in as a parameter
             data_dict = global_state.ipj.data_analysis(mode, [low_bound.get(), high_bound.get()])
-            
+
             # Plotting the jitter data
             fig1 = plt.figure(figsize=(6, 2))
             ax1 = fig1.add_subplot(111)
@@ -1801,7 +1801,6 @@ def UI():
             crms_canvas.get_tk_widget().grid(row=1, column=0, sticky='nsew')  # Use grid for precise placement
             
         def plot_results_plotly():
-
             global ipj_new_folder_path
             # Assuming `ipj` is part of your global state or passed in as a parameter
             data_dict = global_state.ipj.data_analysis(mode, [low_bound.get(), high_bound.get()])

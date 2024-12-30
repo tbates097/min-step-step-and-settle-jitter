@@ -14,16 +14,17 @@ import os
 from datetime import datetime
 import csv
 import traceback
-sys.path.append('../')
-import a1data
 import time as timemodule
 import numpy as np
 import scipy.signal as signal
 import scipy.integrate as integrate
 from scipy.optimize import curve_fit
 
+sys.path.append('../')
+import a1data
+
 sys.path.append(r"K:\10. Released Software\Systems Manufacturing Support\Shared")
-sys.path.append(r"C:\Users\tbates\Python\shared")
+#sys.path.append(r"C:\Users\tbates\Python\shared")
 from Logger import TextLogger
 
 class jitter(a1data.a1data):
@@ -250,7 +251,7 @@ class jitter(a1data.a1data):
                      'd_window' : d, #data array inside the window
                      'freq' : f, #List of frequencies corresponding to the CRMS values
                      'CRMS' : CRMS} #Cumulative RMS list
-        
+
         return data_dict
        
 
