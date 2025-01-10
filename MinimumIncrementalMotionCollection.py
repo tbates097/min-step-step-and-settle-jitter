@@ -179,7 +179,6 @@ class incremental_step(a1data.a1data):
                            
         data_config = super(incremental_step,self).test(controller)
         
-        
         #Make sure step size and decrement are possible by encoder
         #cpu = controller.runtime.parameters.axes.__getitem__(self.axis).units.countsperunit.value 
         #self.step_size = ((int)(self.step_size*cpu))/cpu
@@ -212,7 +211,7 @@ class incremental_step(a1data.a1data):
         
         #Wait for the results to complete
         results = controller.runtime.data_collection.get_results(data_config, self.n)
-        
+        print(f'Sensitivity: {self.sens}')
         #Results as n length arrays with all of the data points collected
         self.populate(self.sens, results)
         

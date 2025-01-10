@@ -186,7 +186,7 @@ class a1data(ABC):
             data_config.axis.add(a1.AxisDataSignal.VelocityCommand, self.axis)
             data_config.axis.add(a1.AxisDataSignal.VelocityFeedback, self.axis)
             data_config.axis.add(a1.AxisDataSignal.VelocityError, self.axis)
-            
+
             if self.units == 'deg':
                 for axis in self.probe_axis:
                     data_config.axis.add(a1.AxisDataSignal.AnalogInput0, axis)

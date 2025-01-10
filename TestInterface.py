@@ -2390,7 +2390,7 @@ def UI():
         if ipj_unit.get() == 'deg' and ipj_signal == "Capacitance Probe":
             ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
         else:
-            ProbeAxis = ipj_probe.get()
+            ProbeAxis = ins_probe.get()
         probe_dist = ins_probe_dist.get()
         num_steps = int(ins_num_step.get())
         units = str(ins_unit.get())
