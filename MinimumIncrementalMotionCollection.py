@@ -211,7 +211,7 @@ class incremental_step(a1data.a1data):
         
         #Wait for the results to complete
         results = controller.runtime.data_collection.get_results(data_config, self.n)
-        print(f'Sensitivity: {self.sens}')
+
         #Results as n length arrays with all of the data points collected
         self.populate(self.sens, results)
         

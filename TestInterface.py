@@ -3112,7 +3112,7 @@ def UI():
         y_cordinate = int((screen_height / 2) - (window_height / 2))
         pdf_window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
     
-    global ins_dir, ins_signal
+    global ins_dir, ins_signal, ins_probe
     ins_dir = a1data.mode.Unidirectional
     ins_signal = a1data.mode.pos_fbk    
     
@@ -3132,7 +3132,7 @@ def UI():
             ins_dir = 'None'
             
     def ins_signal_def(*args):
-        global ins_signal
+        global ins_signal, ins_probe
         if ins_signal_var.get() == "Encoder":
             ins_signal = a1data.mode.pos_fbk
             ins_ent_probe["state"] = tk.DISABLED
@@ -3143,6 +3143,7 @@ def UI():
             ins_sample_menu["state"] = tk.DISABLED
             ins_lbl_dist["state"] = tk.DISABLED
             ins_ent_dist["state"] = tk.DISABLED
+            ins_probe.set(None)
         elif ins_signal_var.get() == "Capacitance Probe":
             ins_signal = a1data.mode.ai0
             ins_ent_probe["state"] = tk.NORMAL
@@ -3156,7 +3157,7 @@ def UI():
                 ins_ent_dist["state"] = tk.NORMAL
         else:
             ins_signal = "None"
-    
+
     def ins_unit_def(*args):
         if ins_unit.get() == "deg":
             if ins_signal_var.get() == 'Capacitance Probe':
