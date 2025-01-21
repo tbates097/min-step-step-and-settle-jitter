@@ -2387,7 +2387,7 @@ def UI():
         t_ms = float(ins_settle.get())
         sensitivity = float(ins_sens.get())
         Probe_Axis_List = ins_probe.get()
-        if ipj_unit.get() == 'deg' and ipj_signal == "Capacitance Probe":
+        if ins_unit.get() == 'deg' and ins_signal == "Capacitance Probe":
             ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
         else:
             ProbeAxis = ins_probe.get()
@@ -2510,7 +2510,10 @@ def UI():
         t_ms = float(ins_settle.get())
         sensitivity = float(ins_sens.get())
         Probe_Axis_List = ins_probe.get()
-        ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
+        if ins_unit.get() == 'deg' and ins_signal == "Capacitance Probe":
+            ProbeAxis = [axis.strip() for axis in re.split(r'[,\s]+', Probe_Axis_List) if axis]
+        else:
+            ProbeAxis = ins_probe.get()
         num_steps = int(ins_num_step.get())
         units = str(ins_unit.get())
         error_units = str(ins_err_unit.get())
@@ -2533,7 +2536,7 @@ def UI():
         
         file = filedialog.askopenfilename(multiple=False)
         
-        global_state.ins.populate(file=file)
+        global_state.ins.populate(sensitivity, file=file)
         ins_data_filtering()
         ins_process_data()
     
