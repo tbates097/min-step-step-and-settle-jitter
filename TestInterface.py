@@ -2395,7 +2395,7 @@ def UI():
         num_steps = int(ins_num_step.get())
         units = str(ins_unit.get())
         error_units = str(ins_err_unit.get())
-        t_ave = int(ins_dwell.get())
+        t_ave = float(ins_dwell.get())
         start_pos = int(ins_start.get())
         speed = int(ins_speed_.get())
         ramp_value = int(ins_ramp_v.get())
