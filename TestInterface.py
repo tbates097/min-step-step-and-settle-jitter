@@ -198,23 +198,76 @@ def UI():
     # Set window size and position
     window.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
     
-    # Create a style object
+    # Define modern color palette
+    BACKGROUND = "#F0F0F0"
+    WHITE = "#FFFFFF"
+    BLUE_PRIMARY = "#0078D4"
+    TEXT_PRIMARY = "#252423"
+
+    # Create and configure style
     style = ttk.Style()
+    style.theme_use('clam')
+    
+    # Configure modern styles for ttk widgets
+    style.configure('TButton', 
+                   padding=10, 
+                   font=('Segoe UI', 10),
+                   background=BLUE_PRIMARY,
+                   foreground=WHITE)
+    
+    style.configure('TLabel',
+                   font=('Segoe UI', 10),
+                   background=BACKGROUND,
+                   foreground=TEXT_PRIMARY)
+    
+    style.configure('TEntry',
+                   padding=2,
+                   font=('Segoe UI', 9),
+                   width=15,
+                   foreground=TEXT_PRIMARY)
+    
+    style.configure('TOptionMenu',
+                   padding=5,
+                   font=('Segoe UI', 10),
+                   foreground=TEXT_PRIMARY)
 
-    # Modify the appearance of the tabs only
+    # Additional modern styles
+    style.configure('Card.TFrame',
+                   background=BACKGROUND,
+                   relief='solid',
+                   borderwidth=1)
+    
+    style.configure('Header.TLabel',
+                   font=('Segoe UI', 12, 'bold'),
+                   foreground=TEXT_PRIMARY,
+                   background=WHITE)
+    
+    style.configure('Modern.TEntry',
+                   padding=2,
+                   relief='solid',
+                   borderwidth=1,
+                   width=15,
+                   foreground=TEXT_PRIMARY)
+    
+    style.configure('Modern.TRadiobutton',
+                   background=BACKGROUND,
+                   font=('Segoe UI', 10),
+                   foreground=TEXT_PRIMARY)
+
+    # Configure notebook style
+    style.configure("TNotebook", 
+                   background=BACKGROUND,
+                   borderwidth=0)
+    
     style.configure("TNotebook.Tab", 
-                    font=('Arial', '12', 'bold'),  # Font style
-                    padding=[10, 4],  # Padding around the text
-                    background="lightgray",  # Background color of the tab
-                    foreground="black",  # Text color
-                    )
-
-    # Change the appearance when the tab is selected
-    style.map("TNotebook.Tab", 
-              background=[("selected", "lightblue")],  # Background color when selected
-              foreground=[("selected", "black")],  # Text color when selected
-              expand=[("selected", [1, 1, 1, 0])]  # Makes selected tab appear slightly larger
-              )
+                   font=('Segoe UI', '12', 'bold'),
+                   padding=[15, 5],
+                   background=WHITE,
+                   foreground=TEXT_PRIMARY)
+    
+    style.map("TNotebook.Tab",
+              background=[("selected", BLUE_PRIMARY)],
+              foreground=[("selected", WHITE)])
     
     
     interface = ttk.Notebook(window)
@@ -373,7 +426,17 @@ def UI():
     text_frame_tab1.grid_columnconfigure(1, weight=0)  # Keep column 1 (Scrollbar) at a fixed size
     
     # Create the text widget and scrollbar
-    txt_outStr = tk.Text(master=text_frame_tab1, state=tk.DISABLED, fg='white', bg='black')
+    txt_outStr = tk.Text(
+        master=text_frame_tab1, 
+        state=tk.DISABLED, 
+        fg='white', 
+        bg='black',
+        font=('Consolas', 10),
+        relief='solid',
+        borderwidth=1,
+        padx=5,
+        pady=5
+    )
     outStr_scroll = tk.Scrollbar(master=text_frame_tab1, orient=tk.VERTICAL)
     
     # Configure the scrollbar
@@ -692,7 +755,7 @@ def UI():
         # Get the width and height of the window
         window_width = filter_window.winfo_width()
         window_height = filter_window.winfo_height()
-        
+    
         # Calculate the screen's width and height
         screen_width = filter_window.winfo_screenwidth()
         screen_height = filter_window.winfo_screenheight()
@@ -1125,7 +1188,17 @@ def UI():
     ms_bi_dir = tk.Radiobutton(master=input_frame_tab1, text="Bidirectional", variable=ms_direction, value="bi", command=ms_test_type_def)
     ms_bi_dir.grid(row=input_frame_tab1.tt_row, column=2, padx=5, pady=5)
     
-    ms_lbl_axis = tk.Label(master=input_frame_tab1, text="Axis Name", width=25, height=1)
+    # Update label styling (for all labels)
+    label_style = {'font': ('Segoe UI', 10), 'bg': BACKGROUND, 'fg': TEXT_PRIMARY, 'padx': 5}
+
+    # Apply to all labels (example for one label, repeat for others)
+    ms_lbl_axis = tk.Label(
+        master=input_frame_tab1, 
+        text="Axis Name", 
+        width=25, 
+        height=1,
+        **label_style
+    )
     ms_lbl_axis.grid(row=input_frame_tab1.axis_row, column=0, padx=5, pady=5)
 
     ms_axis = tk.StringVar(value=ms_axis_value)
@@ -1243,7 +1316,18 @@ def UI():
     btn_import_rot = tk.Button(master=input_frame_tab1, text="Import Data", width=30, height=1, command=import_ms_data)
     btn_import_rot.grid(row=input_frame_tab1.run_row, column=1, padx=5, pady=5)
 
-    ms_btn_run_rot = tk.Button(master=input_frame_tab1, text="Run", width=25, height=1, command=start_moveandsettletest)
+    # Update button styling (for all buttons)
+    btn_style = {'relief': 'flat', 'bg': BLUE_PRIMARY, 'fg': WHITE, 'font': ('Segoe UI', 10), 'padx': 10, 'pady': 5, 'borderwidth': 0}
+
+    # Apply to all buttons (example for one button, repeat for others)
+    ms_btn_run_rot = tk.Button(
+        master=input_frame_tab1, 
+        text="Run", 
+        width=25, 
+        height=1, 
+        command=start_moveandsettletest,
+        **btn_style
+    )
     ms_btn_run_rot.grid(row=input_frame_tab1.run_row, column=0, padx=5, pady=5)
     
 # =============================================================================
@@ -1338,7 +1422,17 @@ def UI():
     text_frame_tab2.grid_columnconfigure(1, weight=0)  # Keep column 1 (Scrollbar) at a fixed size
     
     # Create the text widget and scrollbar
-    txt_outStr1 = tk.Text(master=text_frame_tab2, state=tk.DISABLED, fg='white', bg='black')
+    txt_outStr1 = tk.Text(
+        master=text_frame_tab2, 
+        state=tk.DISABLED, 
+        fg='white', 
+        bg='black',
+        font=('Consolas', 10),
+        relief='solid',
+        borderwidth=1,
+        padx=5,
+        pady=5
+    )
     outStr_scroll1 = tk.Scrollbar(master=text_frame_tab2, orient=tk.VERTICAL)
     
     # Configure the scrollbar
@@ -2303,7 +2397,17 @@ def UI():
     text_frame_tab3.grid_columnconfigure(1, weight=0)  # Keep column 1 (Scrollbar) at a fixed size
     
     # Create the text widget and scrollbar
-    txt_outStr2 = tk.Text(master=text_frame_tab3, state=tk.DISABLED, fg='white', bg='black')
+    txt_outStr2 = tk.Text(
+        master=text_frame_tab3, 
+        state=tk.DISABLED, 
+        fg='white', 
+        bg='black',
+        font=('Consolas', 10),
+        relief='solid',
+        borderwidth=1,
+        padx=5,
+        pady=5
+    )
     outStr_scroll2 = tk.Scrollbar(master=text_frame_tab3, orient=tk.VERTICAL)
     
     # Configure the scrollbar
@@ -2628,7 +2732,7 @@ def UI():
         # Get the width and height of the window
         window_width = filter_window.winfo_width()
         window_height = filter_window.winfo_height()
-        
+    
         # Calculate the screen's width and height
         screen_width = filter_window.winfo_screenwidth()
         screen_height = filter_window.winfo_screenheight()
